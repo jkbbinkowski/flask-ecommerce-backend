@@ -15,6 +15,7 @@ import redis
 import flaskr.functions
 import flaskr.jinja_filters
 
+
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
 config = configparser.ConfigParser()

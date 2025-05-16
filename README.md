@@ -8,7 +8,7 @@ This is fully functional Flask-based backend for e-commerce store.<br>
 It's designed to be as little resource and bandwith consuming as possible.<br>
 The app is passing all efficiency Google SpeedTests above 90 points.<br>
 Unfortunately due to license issues I cannot upload templates and static files.<br>
-The application is still missing few crucial elements for it to work, they will be added in the future.<br>
+This repository is still missing few crucial elements for the application to work, they will be added in the future.<br>
 <br>
 Feel free to contact me if you need help or additional resources (like those listed below) required to run the application.<br>
 <br>

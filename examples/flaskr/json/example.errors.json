@@ -1,0 +1,37 @@
+{
+    "auth": {
+        "invalid_email_or_password": [""],
+        "email_already_exists": [""],
+        "invalid_email": [""],
+        "invalid_name": [""],
+        "invalid_last_name": [""],
+        "invalid_phone": [""],
+        "invalid_pass_lower_case": [""],
+        "invalid_pass_upper_case": [""],
+        "invalid_pass_digit": [""],
+        "invalid_pass_length": [""],
+        "invalid_pass_confirm": [""],
+        "invalid_old_pass": [""],
+        "invalid_new_pass_lower_case": [""],
+        "invalid_new_pass_upper_case": [""],
+        "invalid_new_pass_digit": [""],
+        "invalid_new_pass_length": [""],
+        "invalid_reg_checkbox": [""],
+        "forgot-pass-token-already-generated": [""]
+    },
+    "user": {
+        "shipping_address_not_found_or_not_accessible": [""],
+        "billing_name_too_long": [""],
+        "street_name_too_long": [""],
+        "city_name_too_long": [""],
+        "invalid_postcode": [""],
+        "invalid_country": [""],
+        "invalid_tax_number": [""],
+        "invalid_email": [""],
+        "invalid_reg_checkbox": [""],
+        "invalid_first_name": [""],
+        "invalid_last_name": [""],
+        "invalid_company_name": [""],
+        "invalid_phone": [""]
+    }
+}

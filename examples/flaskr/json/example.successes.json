@@ -1,0 +1,16 @@
+{
+    "auth": {
+        "forgot-pass-token-generated": "",
+        "logged-in": "",
+        "new-password-set": "",
+        "registered": ""
+    },
+    "user": {
+        "password-changed": "",
+        "billing-data-changed": "",
+        "account-data-changed": "",
+        "shipping-address-deleted": "",
+        "address-updated-if-accessible": "",
+        "new-shipping-address-created": ""
+    }
+}

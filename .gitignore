@@ -1,0 +1,11 @@
+**/__pycache__/
+**/logs/
+**/.DS_Store
+**/.webassets-cache/
+flaskr/static/
+flaskr/templates/
+flaskr/json/
+.venv/
+.env
+config.ini
+wsgi.py

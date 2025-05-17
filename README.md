@@ -34,15 +34,15 @@ So far not included in the repository:<br>
 
 ## CONFIGURATION
 The application consists of few configuration files.<br>
-Make sure to configure it well before getting started.<br>
-<b>All configuration files, are located in the "examples" folder.<br>
+Make sure to configure it properly before getting started.<br>
+<b>All examples of the configuration files, are located in the "examples" folder.<br>
 The location of all the files and folders shall be as is, without "examples" folder.</b><br>
-Below you will find description of each configuration file.<br>
 <b>Make sure that all the paths include slashes as provided in the examples file.</b><br>
+Below you will find description for each configuration file.<br>
 
 ### config.ini
 This file contains non-sensitive configuration for the application. Below you will find the description of each part of the configuration file.<br>
-Remove "example." header of the file.<br>
+Remove "example." header from the file.<br>
 | Name | Description |
 | ---- | ----------- |
 | APP | Basic configuration of the app used by Flask. Check flask configuration guidelines for non-binary values. |
@@ -64,7 +64,7 @@ Remove "example." header of the file.<br>
 ### .env
 This file contains all the sensitive configuration.<br>
 <b>NEVER</b> share the contents of this file with anyone.<br>
-Remove "example." header of the file.<br>
+Remove "example." header from the file.<br>
 <b>WORKING_DIR</b> is the directory in which application is located.<br>
 Example: <b>&sol;user&sol;flask-app&sol;</b> (!!! the slash at the end is crucial !!!)<br>
 Rest of the variables in this file are self-explanatory.<br>
@@ -73,9 +73,9 @@ Rest of the variables in this file are self-explanatory.<br>
 Static directory contains it's own README file, with recommendations for creating static files.<br>
 
 ### json
-Json directory contains files in JSON format. Those files are used by the backend to return specific messages for specific requests.<br>
+Json directory contains files in JSON format. Those files are used by the backend to return specific messages for some requests other than GET.<br>
 They are self-explanatory.<br>
-<b>IMPORTANT: make sure that messages in errors.json are parsed as array. This allows you to return more than one independed message in the request.</b><br>
+<b>IMPORTANT: make sure that messages in errors.json are parsed as array. This allows you to return more than one independed message per request (ex. different validation errors for the user while creating new password). See example below how they should be treated by the frontend.</b><br>
 
 ### init.py
 init.py file contains some lines, that might require configuration.<br>

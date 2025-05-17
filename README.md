@@ -75,7 +75,8 @@ Static directory contains it's own README file, with recommendations for creatin
 ### json
 Json directory contains files in JSON format. Those files are used by the backend to return specific messages for some requests other than GET.<br>
 They are self-explanatory.<br>
-<b>IMPORTANT: make sure that messages in errors.json are parsed as array. This allows you to return more than one independed message per request (ex. different validation errors for the user while creating new password). See example below (<b>Requests other than GET</b> section) of how they should be treated by the frontend.</b><br>
+<b>IMPORTANT: make sure that messages in errors.json are parsed as array. This allows you to return more than one independed message per request (ex. different validation errors for the user while creating new password).</b>
+See example below (<b>"Requests other than GET"</b> section) of how they should be treated by the frontend.<br>
 
 ### init.py
 init.py file contains some lines, that might require configuration.<br>

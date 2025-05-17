@@ -146,5 +146,6 @@ function r() {
 1. Configure APP section in config.ini file based on flask guidelines for deploying to production.
 2. Set secure FLASK_SECRET_KEY in .env file based on flask guidelines for deploying to production.
 3. Application is designed to be served using Flask-Nginx-Gunicorn stack. Example of how to deploy it can be found online.<br>
+<br>
 <b>Never deploy the application for public access using development server. This can lead to various security issues. Before deploying to production, make sure that you understand how flask based server should be deployed. Always use WSGI middleware (like gunicorn), reverse proxy server (like NGINX).</b><br>
 It's recommended to use https certificate for each request. Certificate can be obtained using "Let's Encrypt Certbot". After installing the certificate, make sure to change config['GLOBAL']['domain'] to https.

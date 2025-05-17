@@ -89,16 +89,16 @@ Minification of the files makes sure that all requests are as little bandwith co
 ## Workers used by application
 There are several workes, that are used as external services, which help application run as designed.<br>
 Workers are located in scripts folder.<br>
-Those workers should run periodically. The approach for that should be based on how the file is designed.<br>
-- expired_db.py - it's removing outdated rows in the database (ex. expired password reset tokens)
-- mail_handler.py - most of the emails, which are not crucial for application to run, are being scheduled in redis queue. The scripts is getting those emails, that are later on being send to the user. This approach ensures efficiency of the flask application. (some emails that are crucial or time sensitive (ex. password reset emails) are being send directly during the request).
+Those workers should run periodically. The approach "looping" should be based on your own needs (whenever you need to use infinite loops, systemd services or docker).<br>
+- expired_db.py - removes outdated rows in the database (ex. expired password reset tokens)
+- mail_handler.py - most of the emails, which are not crucial for application to run, are being scheduled in redis queue. This scripts is obtaining those emails, that are later on being send to the user. This approach ensures efficiency of the flask application. (some emails that are crucial or time sensitive (ex. password reset emails) are being send directly during the request, so in case of an external error like mail server not available, the user will see error message).
 
 ## Requests other than GET
 The application is designed to use JavaScript for most of the requests that aren't GET requests.<br>
 This is also recommended approach when using HTML forms.<br>
-The ids for the inputs can be found in .py files, validation functions at the end of each file.<br>
-Statuses returned by each request can be found in the .py files.<br>
-Below you have an example of JavaScript function, that is used during signing-up.<br>
+The ids for the inputs and types of requests can be found in .py files, in validation functions at the end of each file.<br>
+Status codes returned by each request can be found in the .py files, messages can be adjusted using JSON files.<br>
+Below you have an example of JavaScript function, that is used for sign-up.<br>
 <b>All requests other than GET require CSRF-token being parsed as below.<br>
 CSRF-token can be obtained as Jinja2 variable, using ``` {{ csrf_token() }} ```.</b><br>
 ```
@@ -114,7 +114,7 @@ function r() {
                 // x.response; - success message obtained as a response
                 // it's recommended to use modal for displaying after-request message
             } else if (x.status == 400){
-                // JSON.parse(x.response); - errors messages obtained as a response
+                // JSON.parse(x.response); - error messages obtained as a response
                 // it's recommended to use modal for displaying after-request messages
                 // it shall be parsed as JSON, as described above in JSON configuration section
             } else {
@@ -146,3 +146,5 @@ function r() {
 1. Configure APP section in config.ini file based on flask guidelines for deploying to production.
 2. Set secure FLASK_SECRET_KEY in .env file based on flask guidelines for deploying to production.
 3. Application is designed to be served using Flask-Nginx-Gunicorn stack. Example of how to deploy it can be found online.
+<b>Never deploy the application for public access using development server. This can lead to various security issues. Before deploying to production, make sure that you understand how flask based server should be deployed. Always use WSGI middleware (like gunicorn), reverse proxy server (like NGINX).</b><br>
+It's recommended to use https certificate for each request. Certificate can be obtained using "Let's Encrypt Certbot". After installing the certificate, make sure to change config['GLOBAL']['domain'] to https.

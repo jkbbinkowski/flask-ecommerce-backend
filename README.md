@@ -80,11 +80,11 @@ See example below (<b>"Requests other than GET"</b> section) of how they should 
 
 ### init.py
 init.py file contains some lines, that might require configuration.<br>
-ASSETS CONFIG section requires configuration, based on static and js files you are using.<br>
-The configuration provided in those lines is example of how it should look.<br>
+<b>ASSETS CONFIG</b> section requires configuration, based on how your static files look.<br>
+The configuration provided in those lines is an example.<br>
 For more detailed description, check Flask-Assets module documentation.<br>
 Minification of the files makes sure that all requests are as little bandwith consuming as possible.<br>
-In production you should use minified files for every template.
+<b>In production you should always use minified files when possible.</b>
 
 ## Workers used by application
 There are several workes, that are used as external services, which help application run as designed.<br>

@@ -15,6 +15,7 @@ import dotenv
 import configparser
 import base64
 import flask
+import datetime
 
 
 dotenv.load_dotenv()
@@ -90,9 +91,12 @@ def get_config_cookie(request):
         user_config = [int(config['PRODUCTS']['default_visibility_per_page']), config['PRODUCTS']['default_sorting_option']]
 
     return_dict = {
-        'config_cookie': user_config,
+        'config_cookie': ','.join(str(x) for x in user_config),
+        'expires': datetime.datetime.now() + datetime.timedelta(days=365*10),
         'products_visibility_per_page': user_config[0],
         'sorting_option': user_config[1]
     }
+
+    return_dict['config_cookie'] = base64.b64encode(return_dict['config_cookie'].encode('utf-8')).decode('utf-8')
 
     return return_dict

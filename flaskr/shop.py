@@ -53,9 +53,7 @@ def shop():
         total_pages=total_pages,
         all_products_count=all_products_count,
     ))
-    expires = datetime.datetime.now() + datetime.timedelta(days=365*10)
-    user_config_str = ','.join(str(x) for x in user_config['config_cookie'])
-    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], base64.b64encode(user_config_str.encode('utf-8')).decode('utf-8'), expires=expires)
+    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'])
     return resp
 
 

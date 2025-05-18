@@ -24,7 +24,7 @@ bp = flask.Blueprint('shop', __name__, url_prefix=config['ENDPOINTS']['shop'])
 
 @bp.route('', methods=['GET'])
 def shop():
-    #get crucial cookies and parameters
+    #get cookies and parameters
     user_config = flaskr.functions.get_config_cookie(flask.request)
     page = flask.request.args.get('s', 1, type=int)
     

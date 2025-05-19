@@ -25,7 +25,6 @@ if __name__ == '__main__':
             task = r.brpop(config['REDIS_QUEUES']['email_queue'], timeout=config['REDIS']['timeout'])
             if task:
                 email_data = json.loads(task[1])
-                print(email_data)
                 flaskr.functions.send_transactional_email(email_data)
 
     except Exception as e:

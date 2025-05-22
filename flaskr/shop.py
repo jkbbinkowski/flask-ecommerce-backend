@@ -22,8 +22,9 @@ config.read(f'{working_dir}/config.ini')
 bp = flask.Blueprint('shop', __name__, url_prefix=config['ENDPOINTS']['shop'])
 
 
-@bp.route('', methods=['GET'])
-def shop():
+@bp.route('', methods=['GET'], defaults={'category': None, 'sub': None, 'subsub': None})
+@bp.route('<category>', methods=['GET'], defaults={'sub': None, 'subsub': None})
+def shop(category, sub, subsub):
     #get crucial cookies and parameters
     user_config = flaskr.functions.get_config_cookie(flask.request)
     page = flask.request.args.get('s', 1, type=int)

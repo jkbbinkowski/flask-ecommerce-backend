@@ -31,6 +31,7 @@ def shop(category, sub_category, subsub_category):
     user_config = flaskr.functions.get_config_cookie(flask.request)
     page = flask.request.args.get('s', 1, type=int)
 
+    #get categories names and ids of children
     active_categories = get_active_categories(category, sub_category, subsub_category)
     child_category_ids = get_child_category_ids(active_categories)
 

@@ -32,7 +32,6 @@ def shop(category, sub_category, subsub_category):
     page = flask.request.args.get('s', 1, type=int)
 
     active_categories = get_active_categories(category, sub_category, subsub_category)
-
     child_category_ids = get_child_category_ids(active_categories)
 
     #pagination
@@ -55,6 +54,7 @@ def shop(category, sub_category, subsub_category):
 
     #render template
     resp = flask.make_response(flask.render_template('shop/products.html', 
+        current_path = flask.request.path,
         products=products, 
         current_products_limit=user_config['products_visibility_per_page'],
         current_sorting_option=user_config['sorting_option'],

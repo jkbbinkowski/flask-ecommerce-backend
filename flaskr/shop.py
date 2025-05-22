@@ -51,7 +51,7 @@ def shop():
         current_sorting_option=user_config['sorting_option'],
         current_page=page,
         total_pages=total_pages,
-        all_products_count=all_products_count,
+        all_products_count=all_products_count
     ))
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'])
     return resp
@@ -67,6 +67,9 @@ def product(product_slug):
     flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (product_id,))
     product = flask.g.cursor.fetchone()
 
+    #get referrer name
+    referrer_name = flask.request.referrer.split(f"{config['GLOBAL']['domain']}/")[1]
+
     #check if id is valid for given slug
     try:
         if f"{flaskr.jinja_filters.slugify(product['name'])}-{product['id']}" != product_slug:
@@ -74,4 +77,4 @@ def product(product_slug):
     except:
         flask.abort(404)
 
-    return flask.render_template('shop/product_details.html', product=product)
+    return flask.render_template('shop/product_details.html', product=product, referrer_name=referrer_name)

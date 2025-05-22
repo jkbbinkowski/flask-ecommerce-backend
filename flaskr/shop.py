@@ -31,18 +31,9 @@ def shop(category, sub_category, subsub_category):
     user_config = flaskr.functions.get_config_cookie(flask.request)
     page = flask.request.args.get('s', 1, type=int)
 
-    #get active categories
-    slugs = [category, sub_category, subsub_category]
-    active_categories = []
-    for idx, slug in enumerate(slugs):
-        if idx == 0:
-            if slug != None:
-                flask.g.cursor.execute("SELECT * FROM categories WHERE slug = %s", (slug,))
-                active_categories.append(flask.g.cursor.fetchone())
-        else:
-            if slug != None:
-                flask.g.cursor.execute(f"SELECT * FROM categories WHERE slug = %s AND parentId = {active_categories[idx-1]['id']}", (slug,))
-                active_categories.append(flask.g.cursor.fetchone())
+    active_categories = get_active_categories(category, sub_category, subsub_category)
+
+    child_ids = get_child_category_ids(active_categories)
 
     #pagination
     flask.g.cursor.execute('SELECT COUNT(*) as total FROM products')
@@ -92,3 +83,40 @@ def product(product_slug):
         flask.abort(404)
 
     return flask.render_template('shop/product_details.html', product=product)
+
+
+def get_active_categories(category, sub_category, subsub_category):
+    slugs = [category, sub_category, subsub_category]
+    active_categories = []
+    for idx, slug in enumerate(slugs):
+        if idx == 0:
+            if slug != None:
+                flask.g.cursor.execute("SELECT * FROM categories WHERE slug = %s", (slug,))
+                active_categories.append(flask.g.cursor.fetchone())
+        else:
+            if slug != None:
+                flask.g.cursor.execute(f"SELECT * FROM categories WHERE slug = %s AND parentId = {active_categories[idx-1]['id']}", (slug,))
+                active_categories.append(flask.g.cursor.fetchone())
+
+    return active_categories
+
+
+def get_child_category_ids(active_categories):
+    child_ids = []
+    if len(active_categories) == 1:
+        child_ids.append(active_categories[0]['id'])
+        flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId = {active_categories[0]['id']}")
+        for id in flask.g.cursor.fetchall():
+            child_ids.append(id['id'])
+        flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId IN {str(tuple(child_ids))}")
+        for id in flask.g.cursor.fetchall():
+            child_ids.append(id['id'])
+    elif len(active_categories) == 2:
+        child_ids.append(active_categories[1]['id'])
+        flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId = {active_categories[1]['id']}")
+        for id in flask.g.cursor.fetchall():
+            child_ids.append(id['id'])
+    elif len(active_categories) == 3:
+        child_ids.append(active_categories[2]['id'])
+
+    return tuple(child_ids)

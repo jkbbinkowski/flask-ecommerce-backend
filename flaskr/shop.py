@@ -42,7 +42,7 @@ def shop(category, sub_category, subsub_category):
         flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products WHERE categoryId IN {child_category_ids}')
     total_products = flask.g.cursor.fetchone()['total']
     total_pages = (total_products + user_config['products_visibility_per_page'] - 1)//user_config['products_visibility_per_page']
-    if page < 1 or page > total_pages:
+    if page < 1 or ((page > total_pages) and (total_pages != 0)):
         flask.abort(404)
     offset = (page - 1)*user_config['products_visibility_per_page']
 

@@ -33,10 +33,13 @@ def shop(category, sub_category, subsub_category):
 
     active_categories = get_active_categories(category, sub_category, subsub_category)
 
-    child_ids = get_child_category_ids(active_categories)
+    child_category_ids = get_child_category_ids(active_categories)
 
     #pagination
-    flask.g.cursor.execute('SELECT COUNT(*) as total FROM products')
+    if child_category_ids == '()':
+        flask.g.cursor.execute('SELECT COUNT(*) as total FROM products')
+    else:
+        flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products WHERE categoryId IN {child_category_ids}')
     total_products = flask.g.cursor.fetchone()['total']
     total_pages = (total_products + user_config['products_visibility_per_page'] - 1)//user_config['products_visibility_per_page']
     if page < 1 or page > total_pages:
@@ -44,12 +47,11 @@ def shop(category, sub_category, subsub_category):
     offset = (page - 1)*user_config['products_visibility_per_page']
 
     #get products
-    flask.g.cursor.execute(f'SELECT * FROM products {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+    if child_category_ids == '()':
+        flask.g.cursor.execute(f'SELECT * FROM products {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+    else:
+        flask.g.cursor.execute(f'SELECT * FROM products WHERE categoryId IN {child_category_ids} {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
-
-    #get total products count
-    flask.g.cursor.execute('SELECT COUNT(*) FROM products')
-    all_products_count = flask.g.cursor.fetchone()['COUNT(*)']
 
     #render template
     resp = flask.make_response(flask.render_template('shop/products.html', 
@@ -58,7 +60,7 @@ def shop(category, sub_category, subsub_category):
         current_sorting_option=user_config['sorting_option'],
         current_page=page,
         total_pages=total_pages,
-        all_products_count=all_products_count,
+        total_products=total_products,
         active_categories=active_categories
     ))
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'], path='/')
@@ -119,4 +121,4 @@ def get_child_category_ids(active_categories):
     elif len(active_categories) == 3:
         child_ids.append(active_categories[2]['id'])
 
-    return tuple(child_ids)
+    return str(tuple(child_ids)).replace(',)', ')')

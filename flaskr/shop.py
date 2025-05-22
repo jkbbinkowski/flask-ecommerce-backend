@@ -70,7 +70,7 @@ def shop(category, sub_category, subsub_category):
         all_products_count=all_products_count,
         active_categories=active_categories
     ))
-    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'])
+    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'], path='/')
     return resp
 
 

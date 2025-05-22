@@ -24,10 +24,21 @@ bp = flask.Blueprint('shop', __name__, url_prefix=config['ENDPOINTS']['shop'])
 
 @bp.route('', methods=['GET'], defaults={'category': None, 'sub': None, 'subsub': None})
 @bp.route('<category>', methods=['GET'], defaults={'sub': None, 'subsub': None})
+@bp.route('<category>/<sub>', methods=['GET'], defaults={'subsub': None})
+@bp.route('<category>/<sub>/<subsub>', methods=['GET'])
 def shop(category, sub, subsub):
     #get crucial cookies and parameters
     user_config = flaskr.functions.get_config_cookie(flask.request)
     page = flask.request.args.get('s', 1, type=int)
+
+    #get active categories
+    active_categories = []
+    if not category == None:
+        active_categories.append(category)
+    if not sub == None:
+        active_categories.append(sub)
+    if not subsub == None:
+        active_categories.append(subsub)
     
     #pagination
     flask.g.cursor.execute('SELECT COUNT(*) as total FROM products')
@@ -52,7 +63,8 @@ def shop(category, sub, subsub):
         current_sorting_option=user_config['sorting_option'],
         current_page=page,
         total_pages=total_pages,
-        all_products_count=all_products_count
+        all_products_count=all_products_count,
+        active_categories=active_categories
     ))
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'])
     return resp
@@ -68,9 +80,6 @@ def product(product_slug):
     flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (product_id,))
     product = flask.g.cursor.fetchone()
 
-    #get referrer name
-    referrer_name = flask.request.referrer.split(f"{config['GLOBAL']['domain']}/")[1]
-
     #check if id is valid for given slug
     try:
         if f"{flaskr.jinja_filters.slugify(product['name'])}-{product['id']}" != product_slug:
@@ -78,4 +87,4 @@ def product(product_slug):
     except:
         flask.abort(404)
 
-    return flask.render_template('shop/product_details.html', product=product, referrer_name=referrer_name)
+    return flask.render_template('shop/product_details.html', product=product)

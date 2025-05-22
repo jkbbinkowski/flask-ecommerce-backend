@@ -22,24 +22,28 @@ config.read(f'{working_dir}/config.ini')
 bp = flask.Blueprint('shop', __name__, url_prefix=config['ENDPOINTS']['shop'])
 
 
-@bp.route('', methods=['GET'], defaults={'category': None, 'sub': None, 'subsub': None})
-@bp.route('<category>', methods=['GET'], defaults={'sub': None, 'subsub': None})
-@bp.route('<category>/<sub>', methods=['GET'], defaults={'subsub': None})
-@bp.route('<category>/<sub>/<subsub>', methods=['GET'])
-def shop(category, sub, subsub):
+@bp.route('', methods=['GET'], defaults={'category': None, 'sub_category': None, 'subsub_category': None})
+@bp.route('<category>', methods=['GET'], defaults={'sub_category': None, 'subsub_category': None})
+@bp.route('<category>/<sub_category>', methods=['GET'], defaults={'subsub_category': None})
+@bp.route('<category>/<sub_category>/<subsub_category>', methods=['GET'])
+def shop(category, sub_category, subsub_category):
     #get crucial cookies and parameters
     user_config = flaskr.functions.get_config_cookie(flask.request)
     page = flask.request.args.get('s', 1, type=int)
 
     #get active categories
+    slugs = [category, sub_category, subsub_category]
     active_categories = []
-    if not category == None:
-        active_categories.append(category)
-    if not sub == None:
-        active_categories.append(sub)
-    if not subsub == None:
-        active_categories.append(subsub)
-    
+    for idx, slug in enumerate(slugs):
+        if idx == 0:
+            if slug != None:
+                flask.g.cursor.execute("SELECT * FROM categories WHERE slug = %s", (slug,))
+                active_categories.append(flask.g.cursor.fetchone())
+        else:
+            if slug != None:
+                flask.g.cursor.execute(f"SELECT * FROM categories WHERE slug = %s AND parentId = {active_categories[idx-1]['id']}", (slug,))
+                active_categories.append(flask.g.cursor.fetchone())
+
     #pagination
     flask.g.cursor.execute('SELECT COUNT(*) as total FROM products')
     total_products = flask.g.cursor.fetchone()['total']

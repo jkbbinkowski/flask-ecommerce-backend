@@ -33,13 +33,13 @@ def shop(category, sub_category, subsub_category):
 
     #get categories names and ids of children
     active_categories = get_active_categories(category, sub_category, subsub_category)
-    child_category_ids = get_child_category_ids(active_categories)
+    parent_categories_ids = get_parent_categories_ids(active_categories)
 
     #pagination
-    if child_category_ids == '()':
+    if parent_categories_ids == '()':
         flask.g.cursor.execute('SELECT COUNT(*) as total FROM products')
     else:
-        flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products WHERE categoryId IN {child_category_ids}')
+        flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products WHERE categoryId IN {parent_categories_ids}')
     total_products = flask.g.cursor.fetchone()['total']
     total_pages = (total_products + user_config['products_visibility_per_page'] - 1)//user_config['products_visibility_per_page']
     if page < 1 or ((page > total_pages) and (total_pages != 0)):
@@ -47,10 +47,10 @@ def shop(category, sub_category, subsub_category):
     offset = (page - 1)*user_config['products_visibility_per_page']
 
     #get products
-    if child_category_ids == '()':
+    if parent_categories_ids == '()':
         flask.g.cursor.execute(f'SELECT * FROM products {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     else:
-        flask.g.cursor.execute(f'SELECT * FROM products WHERE categoryId IN {child_category_ids} {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products WHERE categoryId IN {parent_categories_ids} {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
 
     #render template
@@ -104,22 +104,22 @@ def get_active_categories(category, sub_category, subsub_category):
     return active_categories
 
 
-def get_child_category_ids(active_categories):
-    child_ids = []
+def get_parent_categories_ids(active_categories):
+    parent_ids = []
     if len(active_categories) == 1:
-        child_ids.append(active_categories[0]['id'])
+        parent_ids.append(active_categories[0]['id'])
         flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId = {active_categories[0]['id']}")
         for id in flask.g.cursor.fetchall():
-            child_ids.append(id['id'])
-        flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId IN {str(tuple(child_ids))}")
+            parent_ids.append(id['id'])
+        flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId IN {str(tuple(parent_ids))}")
         for id in flask.g.cursor.fetchall():
-            child_ids.append(id['id'])
+            parent_ids.append(id['id'])
     elif len(active_categories) == 2:
-        child_ids.append(active_categories[1]['id'])
+        parent_ids.append(active_categories[1]['id'])
         flask.g.cursor.execute(f"SELECT id FROM categories WHERE parentId = {active_categories[1]['id']}")
         for id in flask.g.cursor.fetchall():
-            child_ids.append(id['id'])
+            parent_ids.append(id['id'])
     elif len(active_categories) == 3:
-        child_ids.append(active_categories[2]['id'])
+        parent_ids.append(active_categories[2]['id'])
 
-    return str(tuple(child_ids)).replace(',)', ')')
+    return str(tuple(parent_ids)).replace(',)', ')')

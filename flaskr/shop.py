@@ -123,3 +123,11 @@ def get_parent_categories_ids(active_categories):
         parent_ids.append(active_categories[2]['id'])
 
     return str(tuple(parent_ids)).replace(',)', ')')
+
+
+def get_full_category_path(category_id):
+    parent_categories = []
+    flask.g.cursor.execute(f"SELECT * FROM categories WHERE id = {category_id}")
+    parent_categories.append(flask.g.cursor.fetchone())
+
+    return parent_categories

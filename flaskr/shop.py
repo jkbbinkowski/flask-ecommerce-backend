@@ -78,6 +78,8 @@ def product(product_slug):
     flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (product_id,))
     product = flask.g.cursor.fetchone()
 
+    full_category_path = get_full_category_path(product['categoryId'])
+
     #check if id is valid for given slug
     try:
         if f"{flaskr.jinja_filters.slugify(product['name'])}-{product['id']}" != product_slug:
@@ -85,7 +87,7 @@ def product(product_slug):
     except:
         flask.abort(404)
 
-    return flask.render_template('shop/product_details.html', product=product)
+    return flask.render_template('shop/product_details.html', product=product, full_category_path=full_category_path)
 
 
 def get_active_categories(category, sub_category, subsub_category):
@@ -127,7 +129,13 @@ def get_parent_categories_ids(active_categories):
 
 def get_full_category_path(category_id):
     parent_categories = []
-    flask.g.cursor.execute(f"SELECT * FROM categories WHERE id = {category_id}")
-    parent_categories.append(flask.g.cursor.fetchone())
+
+    while True:
+        flask.g.cursor.execute(f"SELECT * FROM categories WHERE id = {category_id}")
+        category = flask.g.cursor.fetchone()
+        category_id = category['parentId']
+        parent_categories.insert(0, category)
+        if category_id == None:
+            break
 
     return parent_categories

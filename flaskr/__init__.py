@@ -100,19 +100,15 @@ with app.app_context():
 
 
 @app.before_request
-def open_sql_before_request():
+def before_rq():
+    if flask.request.host != config['APP']['server_name']:
+        flask.abort(404)
     try:
         flask.g.conn = flaskr.functions.connect_db()
         flask.g.cursor = flask.g.conn.cursor(dictionary=True)
         flask.g.redis_client = redis.Redis(host=config['REDIS']['host'], port=config['REDIS']['port'], db=config['REDIS']['db'])
     except Exception as e:
         print(e)
-
-
-@app.before_request
-def before_rq():
-    if flask.request.host != config['APP']['server_name']:
-        flask.abort(404)
 
 
 @app.after_request

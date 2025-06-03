@@ -147,12 +147,13 @@ def get_cart_products():
 
 def migrate_cart(migration_type):
     try:
+        cookie_cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
+        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (cookie_cart_uuid,))
+        cookie_cart_id = flask.g.cursor.fetchone()['id']
+        flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        user_cart_id = flask.g.cursor.fetchone()['id']
+
         if migration_type == 'cookie->user':
-            cookie_cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
-            flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (cookie_cart_uuid,))
-            cookie_cart_id = flask.g.cursor.fetchone()['id']
-            flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
-            user_cart_id = flask.g.cursor.fetchone()['id']
             flask.g.cursor.execute('UPDATE cartProducts SET cartId = %s WHERE cartId = %s', (user_cart_id, cookie_cart_id))
             flask.g.conn.commit()
             flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s AND (cartId, productId) IN (SELECT cartId, productId FROM cartProducts GROUP BY cartId, productId HAVING COUNT(*) > 1)', (user_cart_id,))
@@ -170,8 +171,15 @@ def migrate_cart(migration_type):
                     flask.g.cursor.execute('DELETE FROM cartProducts WHERE productId = %s AND cartId = %s', (product, user_cart_id))
                     flask.g.conn.commit()
                     merged_products[product] = stock
-            for product in merged_products:
                 flask.g.cursor.execute('INSERT INTO cartProducts (cartId, productId, amount) VALUES (%s, %s, %s)', (user_cart_id, product, merged_products[product]))
+                flask.g.conn.commit()
+
+        elif migration_type == 'user->cookie':
+            flask.g.cursor.execute('DELETE FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
             flask.g.conn.commit()
-    except:
+            flask.g.cursor.execute('INSERT INTO cartProducts (cartId, productId, amount) SELECT %s, productId, amount FROM cartProducts WHERE cartId = %s', (cookie_cart_id, user_cart_id))
+            flask.g.conn.commit()
+            
+    except Exception as e:
+        print(e)
         pass

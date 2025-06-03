@@ -33,5 +33,10 @@
         "invalid_last_name": [""],
         "invalid_company_name": [""],
         "invalid_phone": [""]
+    },
+    "cart": {
+        "product_not_found": [""],
+        "not_enough_in_stock": [""],
+        "amount_too_low": [""]
     }
 }

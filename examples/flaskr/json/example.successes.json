@@ -12,5 +12,8 @@
         "shipping-address-deleted": "",
         "address-updated-if-accessible": "",
         "new-shipping-address-created": ""
+    },
+    "cart": {
+        "product_added": ""
     }
 }

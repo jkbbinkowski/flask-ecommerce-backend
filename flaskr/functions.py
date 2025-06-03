@@ -136,6 +136,7 @@ def get_cart_products():
         product = flask.g.cursor.fetchone()
         db_cart_products.append({
             'id': cart_product['productId'],
+            'amount': cart_product['amount'],
             'name': product['name'],
             'price': product['priceNet'],
             'vatRate': product['vatRate'],

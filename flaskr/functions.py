@@ -105,18 +105,8 @@ def get_config_cookie(request):
 
 
 def init_cart(response):
-    # merge carts if user IS logged in and there IS a cart cookie
-    if flask.request.cookies.get(config['COOKIE_NAMES']['cart']) and flask.session.get('logged'):
-        cookie_cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
-        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (cookie_cart_uuid,))
-        cookie_cart_id = flask.g.cursor.fetchone()['id']
-        flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
-        user_cart_id = flask.g.cursor.fetchone()['id']
-        flask.g.cursor.execute('UPDATE cartProducts SET cartId = %s WHERE cartId = %s', (user_cart_id, cookie_cart_id))
-        flask.g.conn.commit()
-    
-    # create new uuid cart if user is NOT logged in and there is NO cart cookie
-    elif (not flask.request.cookies.get(config['COOKIE_NAMES']['cart'])) and (not flask.session.get('logged')):
+    # create new uuid cart if there is NO cart cookie
+    if (not flask.request.cookies.get(config['COOKIE_NAMES']['cart'])):
         cart_uuid = str(uuid.uuid4())
         flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (cart_uuid, None, int(time.time())))
         flask.g.conn.commit()
@@ -138,6 +128,19 @@ def get_cart_products():
             cart_products = []
     
     flask.g.cart_products = flask.g.cursor.fetchall()
+
+
+def migrate_cart_to_user():
+    try:
+        cookie_cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
+        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (cookie_cart_uuid,))
+        cookie_cart_id = flask.g.cursor.fetchone()['id']
+        flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        user_cart_id = flask.g.cursor.fetchone()['id']
+        flask.g.cursor.execute('UPDATE cartProducts SET cartId = %s WHERE cartId = %s', (user_cart_id, cookie_cart_id))
+        flask.g.conn.commit()
+    except:
+        pass
 
 
 def migrate_cart_to_cookie():

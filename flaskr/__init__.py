@@ -9,6 +9,7 @@ import flask_compress
 import flask_assets
 import flask_wtf
 from datetime import datetime
+import traceback
 import dotenv
 import configparser
 import redis
@@ -108,8 +109,8 @@ def before_rq():
         flask.g.cursor = flask.g.conn.cursor(dictionary=True)
         flask.g.redis_client = redis.Redis(host=config['REDIS']['host'], port=config['REDIS']['port'], db=config['REDIS']['db'])
         flaskr.functions.get_cart_products()
-    except Exception as e:
-        print(e)
+    except:
+        pass
 
 
 @app.after_request

@@ -129,9 +129,24 @@ def get_cart_products():
         user_cart_id = flask.g.cursor.fetchone()['id']
         flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (user_cart_id,))
     else:
-        cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
-        flask.g.cursor.execute('SELECT * FROM carts WHERE uuid = %s', (cart_uuid,))
-        cookie_cart_id = flask.g.cursor.fetchone()['id']
-        flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
+        try:
+            cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
+            flask.g.cursor.execute('SELECT * FROM carts WHERE uuid = %s', (cart_uuid,))
+            cookie_cart_id = flask.g.cursor.fetchone()['id']
+            flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
+        except Exception as e:
+            cart_products = []
     
     flask.g.cart_products = flask.g.cursor.fetchall()
+
+
+def migrate_cart_to_cookie():
+    try:
+        flask.g.cursor.execute('SELECT * FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        user_cart_id = flask.g.cursor.fetchone()['id']
+        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (flask.request.cookies.get(config['COOKIE_NAMES']['cart']),))
+        cookie_cart_id = flask.g.cursor.fetchone()['id']
+        flask.g.cursor.execute('UPDATE cartProducts SET cartId = %s WHERE cartId = %s', (cookie_cart_id, user_cart_id))
+        flask.g.conn.commit()
+    except:
+        pass

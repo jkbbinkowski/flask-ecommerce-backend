@@ -161,6 +161,7 @@ def new_forgot_password(token):
 @bp.route(config['ENDPOINTS']['logout'], methods=['GET'])
 def logout():
     if flask.session.get('user_id'):
+        flaskr.functions.migrate_cart_to_cookie()
         flask.session.clear()
         return flask.render_template('auth/logged_out.html')
     else:

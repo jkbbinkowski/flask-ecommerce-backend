@@ -120,14 +120,15 @@ def open_sql_before_request():
 
 
 @app.before_request
-def check_host():
+def before_rq():
     if flask.request.host != config['APP']['server_name']:
         flask.abort(404)
 
 
-@app.before_request
-def init_cart():
-    flaskr.functions.init_cart()
+@app.after_request
+def after_rq(response):
+    flaskr.functions.init_cart(response)
+    return response
 
 
 @app.teardown_request

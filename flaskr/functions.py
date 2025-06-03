@@ -104,11 +104,19 @@ def get_config_cookie(request):
     return return_dict
 
 
-def init_cart():
+def init_cart(response):
+    # merge carts if user is logged in and there is a cart cookie
     if flask.request.cookies.get(config['COOKIE_NAMES']['cart']) and flask.session.get('logged'):
         print('merge carts')
+        return response
+    
+    # create new uuid cart if user is not logged in and there is no cart cookie
     elif (not flask.request.cookies.get(config['COOKIE_NAMES']['cart'])) and (not flask.session.get('logged')):
-        print('create new cart')
+        cart_uuid = str(uuid.uuid4())
+        flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (cart_uuid, None, int(time.time())))
+        flask.g.conn.commit()
+        response.set_cookie(config['COOKIE_NAMES']['cart'], cart_uuid, expires=datetime.datetime.now() + datetime.timedelta(days=365*10), path='/')
+        return response
 
     
     

@@ -87,14 +87,14 @@ with app.app_context():
     conn = flaskr.functions.connect_db()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM categories")
-    flaskr.static_cache.CACHED_CATEGORIES = flaskr.functions.build_category_tree(cursor.fetchall())
+    flaskr.static_cache.CATEGORIES = flaskr.functions.build_category_tree(cursor.fetchall())
     with open(f'{working_dir}flaskr/json/errors.json', 'r') as f:
-        flaskr.static_cache.CACHED_ERROR_MESSAGES = json.load(f)
+        flaskr.static_cache.ERROR_MESSAGES = json.load(f)
     with open(f'{working_dir}flaskr/json/successes.json', 'r') as f:
-        flaskr.static_cache.CACHED_SUCCESS_MESSAGES = json.load(f)
-    flaskr.static_cache.CACHED_PRODUCTS_VISIBILITY_PER_PAGE = [int(x.strip()) for x in config['PRODUCTS']['visibility_per_page_options'].split(',')]
-    flaskr.static_cache.CACHED_PRODUCTS_SORTING_OPTION_NAMES = [x.strip() for x in config['PRODUCTS']['sorting_option_names'].split(',')]
-    flaskr.static_cache.CACHED_PRODUCTS_SORTING_OPTION_VALUES = [x.strip() for x in config['PRODUCTS']['sorting_option_values'].split(',')]
+        flaskr.static_cache.SUCCESS_MESSAGES = json.load(f)
+    flaskr.static_cache.PRODUCTS_VISIBILITY_PER_PAGE = [int(x.strip()) for x in config['PRODUCTS']['visibility_per_page_options'].split(',')]
+    flaskr.static_cache.PRODUCTS_SORTING_OPTION_NAMES = [x.strip() for x in config['PRODUCTS']['sorting_option_names'].split(',')]
+    flaskr.static_cache.PRODUCTS_SORTING_OPTION_VALUES = [x.strip() for x in config['PRODUCTS']['sorting_option_values'].split(',')]
     cursor.close()
     conn.close()
 
@@ -139,7 +139,7 @@ def inject_company_data():
         'name': flask.session.get('name', None)
     }
     referrer = flask.request.referrer
-    return dict(config=config, current_year=datetime.now().year, user=user, categories=flaskr.static_cache.CACHED_CATEGORIES, referrer=referrer)
+    return dict(config=config, current_year=datetime.now().year, user=user, categories=flaskr.static_cache.CATEGORIES, referrer=referrer)
 
 
 @app.errorhandler(404)

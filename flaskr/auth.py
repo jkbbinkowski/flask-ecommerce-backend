@@ -42,12 +42,12 @@ def login():
         auth_data_db = flask.g.cursor.fetchall()
 
         if len(auth_data_db) == 0 or (not werkzeug.security.check_password_hash(auth_data_db[0]['passHash'], data['log-pass'])):
-            return {'errors': flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_email_or_password']}, 404
+            return {'errors': flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_email_or_password']}, 404
 
         flask.session['logged'] = True
         flask.session['user_id'] = auth_data_db[0]['id']
         flask.session['name'] = f"{auth_data_db[0]['firstName']} {auth_data_db[0]['lastName']}"
-        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['auth']['logged-in'], 200
+        return flaskr.static_cache.SUCCESS_MESSAGES['auth']['logged-in'], 200
 
 
 @bp.route(config['ENDPOINTS']['register'], methods=['GET', 'POST'])
@@ -67,7 +67,7 @@ def register():
         emails = flask.g.cursor.fetchall()
 
         if len(emails) != 0:
-            return {'errors': flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['email_already_exists']}, 400
+            return {'errors': flaskr.static_cache.ERROR_MESSAGES['auth']['email_already_exists']}, 400
 
         pass_hash = werkzeug.security.generate_password_hash(data['reg-pass'], config['AUTH']['hash_method'])
         flask.g.cursor.execute('INSERT INTO users (firstName, lastName, email, phone, passHash) VALUES (%s, %s, %s, %s, %s)', (data['reg-fn'], data['reg-ln'], data['reg-email'], data['reg-ph'], pass_hash))
@@ -81,7 +81,7 @@ def register():
         queue_data = {'template': config['EMAIL_PATHS']['register'], 'subject': config['EMAIL_SUBJECTS']['register'], 'email': data['reg-email'], 'name': data['reg-fn'], 'cc': config['TRANSACTIONAL_EMAIL']['cc']}
         flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))
 
-        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['auth']['registered'], 201
+        return flaskr.static_cache.SUCCESS_MESSAGES['auth']['registered'], 201
     
 
 @bp.route(config['ENDPOINTS']['forgot_password'], methods=['GET', 'POST'])
@@ -107,7 +107,7 @@ def forgot_password():
                 flask.g.conn.commit()
                 token_generated = True
         except:
-            return {'errors': flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['forgot-pass-token-already-generated']}, 409
+            return {'errors': flaskr.static_cache.ERROR_MESSAGES['auth']['forgot-pass-token-already-generated']}, 409
 
         try:
             if token_generated:
@@ -118,7 +118,7 @@ def forgot_password():
             flask.g.conn.commit()
             return '', 500
 
-        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['auth']['forgot-pass-token-generated'], 200
+        return flaskr.static_cache.SUCCESS_MESSAGES['auth']['forgot-pass-token-generated'], 200
     
 
 @bp.route(f"{config['ENDPOINTS']['forgot_password']}{config['ENDPOINTS']['new_password']}/<token>", methods=['GET'])
@@ -155,7 +155,7 @@ def new_forgot_password(token):
         queue_data = {'template': config['EMAIL_PATHS']['new_pass'], 'subject': config['EMAIL_SUBJECTS']['new_pass'], 'email': user_data['email'], 'name': user_data['firstName']}
         flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))
 
-        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['auth']['new-password-set'], 200
+        return flaskr.static_cache.SUCCESS_MESSAGES['auth']['new-password-set'], 200
         
 
 @bp.route(config['ENDPOINTS']['logout'], methods=['GET'])
@@ -170,7 +170,7 @@ def logout():
 def validate_login_data(data):
     errors = []
     if ('@' not in data['log-email']) or ('.' not in data['log-email']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_email'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_email'])
 
     return errors
 
@@ -178,25 +178,25 @@ def validate_login_data(data):
 def validate_register_data(data):
     errors = []
     if (data['reg-fn'] == '') or (len(data['reg-fn']) > 45):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_name'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_name'])
     if (data['reg-ln'] == '') or (len(data['reg-ln']) > 255):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_last_name'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_last_name'])
     if ('@' not in data['reg-email']) or ('.' not in data['reg-email']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_email'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_email'])
     if not re.search(r'[a-z]', data['reg-pass']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_lower_case'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_lower_case'])
     if not re.search(r'[A-Z]', data['reg-pass']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_upper_case'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_upper_case'])
     if not re.search(r'[0-9]', data['reg-pass']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_digit'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_digit'])
     if not re.search(r'[0-9]', data['reg-ph']) or (len(data['reg-ph']) > 20):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_phone'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_phone'])
     if len(data['reg-pass']) < int(config['AUTH']['min_password_length']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_length'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_length'])
     if data['reg-pass'] != data['reg-pass-confirm']:
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_confirm'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_confirm'])
     if data['reg-reg-checkbox'] != True:
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_reg_checkbox'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_reg_checkbox'])
 
     return errors
 
@@ -204,7 +204,7 @@ def validate_register_data(data):
 def validate_forgot_password_data(data):
     errors = []
     if ('@' not in data['forgot-pass-email']) or ('.' not in data['forgot-pass-email']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_email'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_email'])
 
     return errors
 
@@ -212,14 +212,14 @@ def validate_forgot_password_data(data):
 def validate_new_password_data(data):
     errors = []
     if not re.search(r'[a-z]', data['new-pass']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_lower_case'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_lower_case'])
     if not re.search(r'[A-Z]', data['new-pass']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_upper_case'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_upper_case'])
     if not re.search(r'[0-9]', data['new-pass']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_digit'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_digit'])
     if len(data['new-pass']) < int(config['AUTH']['min_password_length']):
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_length'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_length'])
     if data['new-pass'] != data['new-pass-confirm']:
-        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_confirm'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_pass_confirm'])
 
     return errors

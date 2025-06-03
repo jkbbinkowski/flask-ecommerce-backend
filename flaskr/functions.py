@@ -85,9 +85,9 @@ def get_config_cookie(request):
     try:
         config_cookie = base64.b64decode(request.cookies.get(config['COOKIE_NAMES']['user_preferences'])).decode('utf-8').split(',')
         user_config = [int(config_cookie[0]), config_cookie[1]]
-        if not user_config[0] in flaskr.static_cache.CACHED_PRODUCTS_VISIBILITY_PER_PAGE:
+        if not user_config[0] in flaskr.static_cache.PRODUCTS_VISIBILITY_PER_PAGE:
             raise Exception('Invalid config cookie data')
-        if not user_config[1] in flaskr.static_cache.CACHED_PRODUCTS_SORTING_OPTION_VALUES:
+        if not user_config[1] in flaskr.static_cache.PRODUCTS_SORTING_OPTION_VALUES:
             raise Exception('Invalid config cookie data')
     except Exception as e:
         user_config = [int(config['PRODUCTS']['default_visibility_per_page']), config['PRODUCTS']['default_sorting_option']]

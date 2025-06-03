@@ -140,5 +140,23 @@ def migrate_cart(migration_type):
             user_cart_id = flask.g.cursor.fetchone()['id']
             flask.g.cursor.execute('UPDATE cartProducts SET cartId = %s WHERE cartId = %s', (user_cart_id, cookie_cart_id))
             flask.g.conn.commit()
+            flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s AND (cartId, productId) IN (SELECT cartId, productId FROM cartProducts GROUP BY cartId, productId HAVING COUNT(*) > 1)', (user_cart_id,))
+            products_to_merge = flask.g.cursor.fetchall()
+            merged_products = {}
+            for product in products_to_merge:
+                if product['productId'] not in merged_products:
+                    merged_products[product['productId']] = product['amount']
+                else:
+                    merged_products[product['productId']] += product['amount']
+            for product in merged_products:
+                flask.g.cursor.execute('SELECT stock FROM products WHERE id = %s', (product,))
+                stock = flask.g.cursor.fetchone()['stock']
+                if stock < merged_products[product]:
+                    flask.g.cursor.execute('DELETE FROM cartProducts WHERE productId = %s AND cartId = %s', (product, user_cart_id))
+                    flask.g.conn.commit()
+                    merged_products[product] = stock
+            for product in merged_products:
+                flask.g.cursor.execute('INSERT INTO cartProducts (cartId, productId, amount) VALUES (%s, %s, %s)', (user_cart_id, product, merged_products[product]))
+            flask.g.conn.commit()
     except:
         pass

@@ -12,6 +12,7 @@ from flaskr.decorators import login_required
 import dotenv
 import configparser
 import werkzeug.security
+import flaskr.static_cache
 
 
 dotenv.load_dotenv()
@@ -50,7 +51,7 @@ def account_data():
 
         flask.session['name'] = f"{data['acc-fn']} {data['acc-ln']}"
 
-        return flask.g.successes['user']['account-data-changed'], 200
+        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['user']['account-data-changed'], 200
 
 
 @bp.route(config['ENDPOINTS']['billing_data'], methods=['GET', 'PUT'])
@@ -81,7 +82,7 @@ def billing_data():
         flask.g.cursor.execute('UPDATE billingData SET type = %s, name = %s, street = %s, city = %s, postcode = %s, countryCode = %s, country = %s, taxId = %s, email = %s WHERE userId = %s', (bill_type, data['bill-nm'], data['bill-st'], data['bill-ct'], data['bill-pc'], data['bill-ctr-code'], data['bill-ctr'], data['bill-vat'], data['bill-email'], flask.session['user_id']))
         flask.g.conn.commit()
 
-        return flask.g.successes['user']['billing-data-changed'], 200
+        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['user']['billing-data-changed'], 200
 
 
 @bp.route(config['ENDPOINTS']['shipping_data'], methods=['GET'], defaults={'own_uuid': None})
@@ -101,9 +102,9 @@ def shipping_data(own_uuid):
         deleted_rows = flask.g.cursor.rowcount
 
         if deleted_rows == 1:
-            return flask.g.successes['user']['shipping-address-deleted'], 202
+            return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['user']['shipping-address-deleted'], 202
         else:
-            return {'errors': flask.g.errors['user']['shipping_address_not_found_or_not_accessible']}, 404
+            return {'errors': flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['shipping_address_not_found_or_not_accessible']}, 404
 
 
 @bp.route(f"{config['ENDPOINTS']['shipping_data']}{config['ACTIONS']['add']}", methods=['GET', 'POST'])
@@ -124,7 +125,7 @@ def shipping_data_add():
         flask.g.cursor.execute('INSERT INTO shippingAddresses (uuid, userId, firstName, lastName, companyName, street, postcode, city, countryCode, country, phone) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', (own_uuid, flask.session['user_id'], data['ship-fn'], data['ship-ln'], data['ship-cn'], data['ship-st'], data['ship-pc'], data['ship-ct'], data['ship-ctr-code'], data['ship-ctr'], data['ship-ph']))
         flask.g.conn.commit()
 
-        return flask.g.successes['user']['new-shipping-address-created'], 201          
+        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['user']['new-shipping-address-created'], 201          
 
 
 @bp.route(f"{config['ENDPOINTS']['shipping_data']}{config['ACTIONS']['edit']}/<own_uuid>", methods=['GET', 'PUT'])
@@ -150,7 +151,7 @@ def shipping_data_edit(own_uuid):
         flask.g.cursor.execute('UPDATE shippingAddresses SET firstName = %s, lastName = %s, companyName = %s, street = %s, postcode = %s, city = %s, countryCode = %s, country = %s, phone = %s WHERE uuid = %s AND userId = %s', (data['ship-fn'], data['ship-ln'], data['ship-cn'], data['ship-st'], data['ship-pc'], data['ship-ct'], data['ship-ctr-code'], data['ship-ctr'], data['ship-ph'], own_uuid, flask.session['user_id']))
         flask.g.conn.commit()
 
-        return flask.g.successes['user']['address-updated-if-accessible'], 200  
+        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['user']['address-updated-if-accessible'], 200  
     
 
 @bp.route(config['ENDPOINTS']['change_password'], methods=['GET', 'POST'])
@@ -166,7 +167,7 @@ def change_password():
         old_pass_hash = flask.g.cursor.fetchall()[0]['passHash']
 
         if not werkzeug.security.check_password_hash(old_pass_hash, data['old-pass']):
-            return {'errors': flask.g.errors['auth']['invalid_old_pass']}, 400
+            return {'errors': flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_old_pass']}, 400
 
         errors = validate_password(data)
         if len(errors) > 0:
@@ -183,34 +184,34 @@ def change_password():
         queue_data = {'template': config['EMAIL_PATHS']['new_pass'], 'subject': config['EMAIL_SUBJECTS']['new_pass'], 'email': user_data['email'], 'name': user_data['firstName']}
         flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))
 
-        return flask.g.successes['user']['password-changed'], 200
+        return flaskr.static_cache.CACHED_SUCCESS_MESSAGES['user']['password-changed'], 200
 
 
 def validate_billing_data(data):
     errors = []
     if (len(data['bill-nm']) > 255):
-        errors.append(flask.g.errors['user']['billing_name_too_long'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['billing_name_too_long'])
     if (len(data['bill-st']) > 255):
-        errors.append(flask.g.errors['user']['street_name_too_long'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['street_name_too_long'])
     if (len(data['bill-ct']) > 255):
-        errors.append(flask.g.errors['user']['city_name_too_long'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['city_name_too_long'])
     if (data['bill-pc']) != '':
         if not re.search(r'[0-9]', data['bill-pc']) or (len(data['bill-pc']) > 20):
-            errors.append(flask.g.errors['user']['invalid_postcode'])
+            errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_postcode'])
     if 'bill-ctr-code' in data:
         if (data['bill-ctr-code']) != '':
             if not re.search(r'[A-Z]', data['bill-ctr-code']):
-                errors.append(flask.g.errors['user']['invalid_country'])
+                errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_country'])
     else:
-        errors.append(flask.g.errors['user']['invalid_country'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_country'])
     if (data['bill-vat']) != '':
         if not re.search(r'[0-9]', data['bill-vat']) or (len(data['bill-vat']) > 45):
-            errors.append(flask.g.errors['user']['invalid_tax_number'])
+            errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_tax_number'])
     if (data['bill-email']) != '':
         if ('@' not in data['bill-email']) or ('.' not in data['bill-email']):
-            errors.append(flask.g.errors['user']['invalid_email'])
+            errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_email'])
     if data['bill-reg-checkbox'] != True:
-        errors.append(flask.g.errors['user']['invalid_reg_checkbox'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_reg_checkbox'])
 
     return errors
 
@@ -218,13 +219,13 @@ def validate_billing_data(data):
 def validate_account_data(data):
     errors = []
     if (data['acc-fn'] == '') or (len(data['acc-fn']) > 45):
-        errors.append(flask.g.errors['user']['invalid_first_name'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_first_name'])
     if (data['acc-ln'] == '') or (len(data['acc-ln']) > 255):
-        errors.append(flask.g.errors['user']['invalid_last_name'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_last_name'])
     if not re.search(r'[0-9]', data['acc-ph']) or (len(data['acc-ph']) > 20):
-        errors.append(flask.g.errors['user']['invalid_phone'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_phone'])
     if data['acc-reg-checkbox'] != True:
-        errors.append(flask.g.errors['user']['invalid_reg_checkbox'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_reg_checkbox'])
 
     return errors
 
@@ -232,24 +233,24 @@ def validate_account_data(data):
 def validate_shipping_data(data):
     errors = []
     if (data['ship-fn'] == '') or (len(data['ship-fn']) > 45):
-        errors.append(flask.g.errors['user']['invalid_first_name'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_first_name'])
     if (data['ship-ln'] == '') or (len(data['ship-ln']) > 255):
-        errors.append(flask.g.errors['user']['invalid_last_name'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_last_name'])
     if (len(data['ship-cn']) > 255):
-        errors.append(flask.g.errors['user']['invalid_company_name'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_company_name'])
     if (data['ship-st'] == '') or (len(data['ship-st']) > 255):
-        errors.append(flask.g.errors['user']['street_name_too_long'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['street_name_too_long'])
     if not re.search(r'[0-9]', data['ship-pc']) or (len(data['ship-pc']) > 20):
-        errors.append(flask.g.errors['user']['invalid_postcode'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_postcode'])
     if (data['ship-ct'] == '') or (len(data['ship-ct']) > 255):
-        errors.append(flask.g.errors['user']['city_name_too_long'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['city_name_too_long'])
     if 'ship-ctr-code' in data:
         if not re.search(r'[A-Z]', data['ship-ctr-code']):
-            errors.append(flask.g.errors['user']['invalid_country'])
+            errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_country'])
     else:
-        errors.append(flask.g.errors['user']['invalid_country'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_country'])
     if not re.search(r'[0-9]', data['ship-ph']) or (len(data['ship-ph']) > 20):
-        errors.append(flask.g.errors['user']['invalid_phone'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['user']['invalid_phone'])
 
     return errors
 
@@ -257,16 +258,16 @@ def validate_shipping_data(data):
 def validate_password(data):
     errors = []
     if not re.search(r'[a-z]', data['new-pass']):
-        errors.append(flask.g.errors['auth']['invalid_new_pass_lower_case'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_new_pass_lower_case'])
     if not re.search(r'[A-Z]', data['new-pass']):
-        errors.append(flask.g.errors['auth']['invalid_new_pass_upper_case'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_new_pass_upper_case'])
     if not re.search(r'[0-9]', data['new-pass']):
-        errors.append(flask.g.errors['auth']['invalid_new_pass_digit'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_new_pass_digit'])
     if len(data['new-pass']) < int(config['AUTH']['min_password_length']):
-        errors.append(flask.g.errors['auth']['invalid_new_pass_length'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_new_pass_length'])
     if data['new-pass'] != data['new-pass-confirm']:
-        errors.append(flask.g.errors['auth']['invalid_pass_confirm'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_pass_confirm'])
     if data['pass-reg-checkbox'] != True:
-        errors.append(flask.g.errors['auth']['invalid_reg_checkbox'])
+        errors.append(flaskr.static_cache.CACHED_ERROR_MESSAGES['auth']['invalid_reg_checkbox'])
 
     return errors

@@ -114,20 +114,34 @@ def init_cart(response):
         
 
 def get_cart_products():
+    cart_products = []
     if flask.session.get('logged'):
         flask.g.cursor.execute('SELECT * FROM carts WHERE userId = %s', (flask.session['user_id'],))
         user_cart_id = flask.g.cursor.fetchone()['id']
         flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (user_cart_id,))
+        cart_products = flask.g.cursor.fetchall()
     else:
         try:
             cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
             flask.g.cursor.execute('SELECT * FROM carts WHERE uuid = %s', (cart_uuid,))
             cookie_cart_id = flask.g.cursor.fetchone()['id']
             flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
+            cart_products = flask.g.cursor.fetchall()
         except Exception as e:
             cart_products = []
+
+    db_cart_products = []
+    for cart_product in cart_products:
+        flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (cart_product['productId'],))
+        product = flask.g.cursor.fetchone()
+        db_cart_products.append({
+            'id': cart_product['productId'],
+            'name': product['name'],
+            'price': product['priceNet'],
+            'vatRate': product['vatRate'],
+        })
     
-    flask.g.cart_products = flask.g.cursor.fetchall()
+    flask.g.cart_products = db_cart_products
 
 
 def migrate_cart(migration_type):

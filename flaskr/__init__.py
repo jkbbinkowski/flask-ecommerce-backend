@@ -111,7 +111,9 @@ def before_rq():
         flask.g.cursor = flask.g.conn.cursor(dictionary=True)
         flask.g.redis_client = redis.Redis(host=config['REDIS']['host'], port=config['REDIS']['port'], db=config['REDIS']['db'])
         flaskr.functions.get_cart_products()
-    except:
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
         pass
 
 

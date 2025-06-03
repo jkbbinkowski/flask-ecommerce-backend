@@ -77,6 +77,8 @@ from . import blog
 app.register_blueprint(blog.bp)
 from . import shop
 app.register_blueprint(shop.bp)
+from . import cart
+app.register_blueprint(cart.bp)
 
 
 # load static data

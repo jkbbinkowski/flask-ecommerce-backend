@@ -114,8 +114,6 @@ def init_cart(response):
         user_cart_id = flask.g.cursor.fetchone()['id']
         flask.g.cursor.execute('UPDATE cartProducts SET cartId = %s WHERE cartId = %s', (user_cart_id, cookie_cart_id))
         flask.g.conn.commit()
-
-        return None
     
     # create new uuid cart if user is NOT logged in and there is NO cart cookie
     elif (not flask.request.cookies.get(config['COOKIE_NAMES']['cart'])) and (not flask.session.get('logged')):
@@ -123,21 +121,19 @@ def init_cart(response):
         flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (cart_uuid, None, int(time.time())))
         flask.g.conn.commit()
         response.set_cookie(config['COOKIE_NAMES']['cart'], cart_uuid, expires=datetime.datetime.now() + datetime.timedelta(days=365*10), path='/')
+        
 
-        return cart_uuid
-
-def get_cart_products(response, cart_uuid):
+def get_cart_products():
     if flask.session.get('logged'):
         flask.g.cursor.execute('SELECT * FROM carts WHERE userId = %s', (flask.session['user_id'],))
         user_cart_id = flask.g.cursor.fetchone()['id']
         flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (user_cart_id,))
-        flask.g.cart_products = flask.g.cursor.fetchall()
     else:
-        if not cart_uuid:
-            cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
+        cart_uuid = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
         flask.g.cursor.execute('SELECT * FROM carts WHERE uuid = %s', (cart_uuid,))
         cookie_cart_id = flask.g.cursor.fetchone()['id']
         flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
-        flask.g.cart_products = flask.g.cursor.fetchall()
+    
+    flask.g.cart_products = flask.g.cursor.fetchall()
     
     print(flask.g.cart_products)

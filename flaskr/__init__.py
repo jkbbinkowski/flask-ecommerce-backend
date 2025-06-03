@@ -107,14 +107,14 @@ def before_rq():
         flask.g.conn = flaskr.functions.connect_db()
         flask.g.cursor = flask.g.conn.cursor(dictionary=True)
         flask.g.redis_client = redis.Redis(host=config['REDIS']['host'], port=config['REDIS']['port'], db=config['REDIS']['db'])
+        flaskr.functions.get_cart_products()
     except Exception as e:
         print(e)
 
 
 @app.after_request
 def after_rq(response):
-    cart_uuid = flaskr.functions.init_cart(response)
-    flaskr.functions.get_cart_products(response, cart_uuid)
+    flaskr.functions.init_cart(response)
     return response
 
 

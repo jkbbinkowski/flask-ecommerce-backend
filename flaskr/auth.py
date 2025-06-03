@@ -47,8 +47,8 @@ def login():
         flask.session['logged'] = True
         flask.session['user_id'] = auth_data_db[0]['id']
         flask.session['name'] = f"{auth_data_db[0]['firstName']} {auth_data_db[0]['lastName']}"
-        flaskr.functions.migrate_cart_to_user()
-        
+        flaskr.functions.migrate_cart('cookie->user')
+
         return flaskr.static_cache.SUCCESS_MESSAGES['auth']['logged-in'], 200
 
 
@@ -163,7 +163,7 @@ def new_forgot_password(token):
 @bp.route(config['ENDPOINTS']['logout'], methods=['GET'])
 def logout():
     if flask.session.get('user_id'):
-        flaskr.functions.migrate_cart_to_cookie()
+        flaskr.functions.migrate_cart('user->cookie')
         flask.session.clear()
         return flask.render_template('auth/logged_out.html')
     else:

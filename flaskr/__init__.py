@@ -139,7 +139,7 @@ def inject_company_data():
         'name': flask.session.get('name', None)
     }
     referrer = flask.request.referrer
-    return dict(config=config, current_year=datetime.now().year, user=user, categories=CACHED_CATEGORIES, referrer=referrer)
+    return dict(config=config, current_year=datetime.now().year, user=user, categories=flaskr.static_cache.CACHED_CATEGORIES, referrer=referrer)
 
 
 @app.errorhandler(404)

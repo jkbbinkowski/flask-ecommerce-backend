@@ -51,3 +51,21 @@ def add_to_cart():
         flask.g.conn.commit()
 
     return flaskr.static_cache.SUCCESS_MESSAGES['cart']['product_added'], 202
+
+
+@bp.route(config['ACTIONS']['remove']+'/<productId>', methods=['GET'])
+def remove_from_cart(productId):
+    cart_id = None
+    if flask.session.get('logged'):
+        flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        cart_id = flask.g.cursor.fetchone()['id']
+    else:
+        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (flask.request.cookies.get(config['COOKIE_NAMES']['cart']),))
+        cart_id = flask.g.cursor.fetchone()['id']
+
+    flask.g.cursor.execute('DELETE FROM cartProducts WHERE productId = %s and cartId = %s', (productId, cart_id))
+    flask.g.conn.commit()
+
+    return flask.redirect(flask.request.referrer or '/')
+
+

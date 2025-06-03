@@ -16,6 +16,8 @@ import configparser
 import base64
 import flask
 import datetime
+import uuid
+import time
 
 
 dotenv.load_dotenv()
@@ -100,13 +102,6 @@ def get_config_cookie(request):
     return_dict['config_cookie'] = base64.b64encode(return_dict['config_cookie'].encode('utf-8')).decode('utf-8')
 
     return return_dict
-
-
-def get_cart_cookie(request):
-    try:
-        return request.cookies.get(config['COOKIE_NAMES']['cart'])
-    except Exception as e:
-        return None
 
     
     

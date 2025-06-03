@@ -103,5 +103,12 @@ def get_config_cookie(request):
 
     return return_dict
 
+
+def init_cart():
+    if flask.request.cookies.get(config['COOKIE_NAMES']['cart']) and flask.session.get('logged'):
+        print('merge carts')
+    elif (not flask.request.cookies.get(config['COOKIE_NAMES']['cart'])) and (not flask.session.get('logged')):
+        print('create new cart')
+
     
     

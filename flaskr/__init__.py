@@ -125,6 +125,11 @@ def check_host():
         flask.abort(404)
 
 
+@app.before_request
+def init_cart():
+    flaskr.functions.init_cart()
+
+
 @app.teardown_request
 def teardown_request(exception):
     if hasattr(flask.g, 'cursor'):

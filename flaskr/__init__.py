@@ -133,10 +133,15 @@ def inject_company_data():
     user = {
         'is_logged': flask.session.get('logged', False),
         'id': flask.session.get('user_id', None),
-        'name': flask.session.get('name', None)
+        'name': flask.session.get('name', None),
+    }
+    shop = {
+        'sorting_option_names': flaskr.static_cache.PRODUCTS_SORTING_OPTION_NAMES,
+        'sorting_option_values': flaskr.static_cache.PRODUCTS_SORTING_OPTION_VALUES,
+        'products_visibility_per_page': flaskr.static_cache.PRODUCTS_VISIBILITY_PER_PAGE
     }
     referrer = flask.request.referrer
-    return dict(config=config, current_year=datetime.now().year, user=user, categories=flaskr.static_cache.CATEGORIES, referrer=referrer)
+    return dict(config=config, current_year=datetime.now().year, user=user, shop=shop, categories=flaskr.static_cache.CATEGORIES, referrer=referrer)
 
 
 @app.errorhandler(404)

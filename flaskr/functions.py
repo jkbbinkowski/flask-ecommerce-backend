@@ -135,5 +135,3 @@ def get_cart_products():
         flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
     
     flask.g.cart_products = flask.g.cursor.fetchall()
-    
-    print(flask.g.cart_products)

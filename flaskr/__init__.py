@@ -113,7 +113,8 @@ def before_rq():
 
 @app.after_request
 def after_rq(response):
-    flaskr.functions.init_cart(response)
+    cart_uuid = flaskr.functions.init_cart(response)
+    flaskr.functions.get_cart_products(response, cart_uuid)
     return response
 
 

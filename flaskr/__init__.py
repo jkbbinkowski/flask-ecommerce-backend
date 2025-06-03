@@ -14,6 +14,7 @@ import configparser
 import redis
 import flaskr.functions
 import flaskr.jinja_filters
+import flaskr.static_cache
 
 
 dotenv.load_dotenv()
@@ -82,24 +83,18 @@ app.register_blueprint(cart.bp)
 
 
 # load static data
-CACHED_CATEGORIES = []
-CACHED_ERROR_MESSAGES = {}
-CACHED_SUCCESS_MESSAGES = {}
-CACHED_PRODUCTS_VISIBILITY_PER_PAGE = []
-CACHED_PRODUCTS_SORTING_OPTION_NAMES = []
-CACHED_PRODUCTS_SORTING_OPTION_VALUES = []
 with app.app_context():
     conn = flaskr.functions.connect_db()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM categories")
-    CACHED_CATEGORIES = flaskr.functions.build_category_tree(cursor.fetchall())
+    flaskr.static_cache.CACHED_CATEGORIES = flaskr.functions.build_category_tree(cursor.fetchall())
     with open(f'{working_dir}flaskr/json/errors.json', 'r') as f:
-        CACHED_ERROR_MESSAGES = json.load(f)
+        flaskr.static_cache.CACHED_ERROR_MESSAGES = json.load(f)
     with open(f'{working_dir}flaskr/json/successes.json', 'r') as f:
-        CACHED_SUCCESS_MESSAGES = json.load(f)
-    CACHED_PRODUCTS_VISIBILITY_PER_PAGE = [int(x.strip()) for x in config['PRODUCTS']['visibility_per_page_options'].split(',')]
-    CACHED_PRODUCTS_SORTING_OPTION_NAMES = [x.strip() for x in config['PRODUCTS']['sorting_option_names'].split(',')]
-    CACHED_PRODUCTS_SORTING_OPTION_VALUES = [x.strip() for x in config['PRODUCTS']['sorting_option_values'].split(',')]
+        flaskr.static_cache.CACHED_SUCCESS_MESSAGES = json.load(f)
+    flaskr.static_cache.CACHED_PRODUCTS_VISIBILITY_PER_PAGE = [int(x.strip()) for x in config['PRODUCTS']['visibility_per_page_options'].split(',')]
+    flaskr.static_cache.CACHED_PRODUCTS_SORTING_OPTION_NAMES = [x.strip() for x in config['PRODUCTS']['sorting_option_names'].split(',')]
+    flaskr.static_cache.CACHED_PRODUCTS_SORTING_OPTION_VALUES = [x.strip() for x in config['PRODUCTS']['sorting_option_values'].split(',')]
     cursor.close()
     conn.close()
 
@@ -110,11 +105,6 @@ def open_sql_before_request():
         flask.g.conn = flaskr.functions.connect_db()
         flask.g.cursor = flask.g.conn.cursor(dictionary=True)
         flask.g.redis_client = redis.Redis(host=config['REDIS']['host'], port=config['REDIS']['port'], db=config['REDIS']['db'])
-        flask.g.errors = CACHED_ERROR_MESSAGES
-        flask.g.successes = CACHED_SUCCESS_MESSAGES
-        flask.g.products_visibility_per_page = CACHED_PRODUCTS_VISIBILITY_PER_PAGE
-        flask.g.sorting_option_names = CACHED_PRODUCTS_SORTING_OPTION_NAMES
-        flask.g.sorting_option_values = CACHED_PRODUCTS_SORTING_OPTION_VALUES
     except Exception as e:
         print(e)
 

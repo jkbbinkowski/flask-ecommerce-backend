@@ -25,7 +25,7 @@ bp = flask.Blueprint('cart', __name__, url_prefix=config['ENDPOINTS']['cart'])
 
 @bp.route(config['ACTIONS']['init'])
 def check_cart():
-    if not (flaskr.functions.get_cart_cookie(flask.request) and (flask.session.get('logged'))):
+    if (not flaskr.functions.get_cart_cookie(flask.request)) and (flask.session.get('logged') != True):
         cart_uuid = str(uuid.uuid4())
         resp = flask.make_response()
         resp.set_cookie(config['COOKIE_NAMES']['cart'], cart_uuid, expires=datetime.datetime.now()+datetime.timedelta(days=365*10), path='/')

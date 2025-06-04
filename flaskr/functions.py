@@ -19,6 +19,8 @@ import datetime
 import uuid
 import time
 import flaskr.static_cache
+import traceback
+
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -162,7 +164,7 @@ def migrate_cart(migration_type):
             delete_cart_id = user_cart_id
             direction_tuple = (user_cart_id, cookie_cart_id)
             flask.g.cursor.execute('SELECT COUNT(*) FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
-            if flask.g.cursor.fetchone()[0] == 0:
+            if not flask.g.cursor.fetchone()['COUNT(*)']:
                 return
         elif migration_type == 'user->cookie':
             delete_cart_id = cookie_cart_id
@@ -174,5 +176,6 @@ def migrate_cart(migration_type):
         flask.g.conn.commit()
 
     except Exception as e:
+        print(traceback.format_exc())
         print(e)
         pass

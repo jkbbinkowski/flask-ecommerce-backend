@@ -4,4 +4,4 @@ The paths in this folder need to be adjusted based on your template files.
 Recommended paths within static directory: /css, /fonts, /images, /js, /min, /pdf, /scss.
 
 Make sure to serve minifed version of the files for production. 
-It's descriped in main README file.
+It's documented in main README file.

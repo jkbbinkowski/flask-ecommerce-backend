@@ -43,6 +43,8 @@ js_user = flask_assets.Bundle('js/user.js', output='min/upacked.js', filters='js
 assets.register('js_user', js_user)
 js_shop = flask_assets.Bundle('js/shop.js', output='min/spacked.js', filters='jsmin')
 assets.register('js_shop', js_shop)
+js_order = flask_assets.Bundle('js/order.js', output='min/opacked.js', filters='jsmin')
+assets.register('js_order', js_order)
 
 
 # configure gzip 

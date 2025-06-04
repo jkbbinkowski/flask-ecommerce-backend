@@ -69,6 +69,32 @@ def remove_from_cart(productId):
     return flask.redirect(flask.request.referrer or '/')
 
 
+@bp.route(config['ACTIONS']['edit']+'/<productId>', methods=['PUT'])
+def edit_cart_product(productId):
+    data = json.loads(flask.request.get_data().decode())
+    flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (data['productId'],))
+    product = flask.g.cursor.fetchone()
+    if product == None:
+        return {"errors": flaskr.static_cache.ERROR_MESSAGES['cart']['product_not_found']}, 404
+    elif data['amount'] < 1:
+        return {"errors": flaskr.static_cache.ERROR_MESSAGES['cart']['amount_too_low']}, 400
+    elif (data['amount']) > product['stock']:
+        return {"errors": flaskr.static_cache.ERROR_MESSAGES['cart']['not_enough_in_stock']}, 400
+    
+    cart_id = None
+    if flask.session.get('logged'):
+        flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        cart_id = flask.g.cursor.fetchone()['id']
+    else:
+        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (flask.request.cookies.get(config['COOKIE_NAMES']['cart']),))
+        cart_id = flask.g.cursor.fetchone()['id']
+
+    flask.g.cursor.execute('UPDATE cartProducts SET amount = %s WHERE productId = %s and cartId = %s', (data['amount'], productId, cart_id))
+    flask.g.conn.commit()
+
+    return flaskr.static_cache.SUCCESS_MESSAGES['cart']['product_edited'], 202
+
+
 @bp.route('', methods=['GET'])
 def cart():
     return flask.render_template('order/cart.html')

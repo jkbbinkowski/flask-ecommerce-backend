@@ -46,11 +46,19 @@ def shop(category, sub_category, subsub_category):
         flask.abort(404)
     offset = (page - 1)*user_config['products_visibility_per_page']
 
+    #availability
+    if user_config['availability'] == 'available':
+        availability_query = 'WHERE stock > 0'
+    elif user_config['availability'] == 'not-available':
+        availability_query = 'WHERE stock = 0'
+    else:
+        availability_query = 'WHERE stock >= 0'
+
     #get products
     if parent_categories_ids == '()':
-        flask.g.cursor.execute(f'SELECT * FROM products {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     else:
-        flask.g.cursor.execute(f'SELECT * FROM products WHERE categoryId IN {parent_categories_ids} {json.loads(config['PRODUCTS']['sorting_option_queries'])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} AND categoryId IN {parent_categories_ids} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
 
     #render template
@@ -59,6 +67,7 @@ def shop(category, sub_category, subsub_category):
         products=products, 
         current_products_limit=user_config['products_visibility_per_page'],
         current_sorting_option=user_config['sorting_option'],
+        current_availability=user_config['availability'],
         current_page=page,
         total_pages=total_pages,
         total_products=total_products,

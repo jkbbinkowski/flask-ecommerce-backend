@@ -156,6 +156,9 @@ def migrate_cart(migration_type):
         if migration_type == 'cookie->user':
             delete_cart_id = user_cart_id
             direction_tuple = (user_cart_id, cookie_cart_id)
+            flask.g.cursor.execute('SELECT COUNT(*) FROM cartProducts WHERE cartId = %s', (cookie_cart_id,))
+            if flask.g.cursor.fetchone()[0] == 0:
+                return
         elif migration_type == 'user->cookie':
             delete_cart_id = cookie_cart_id
             direction_tuple = (cookie_cart_id, user_cart_id)

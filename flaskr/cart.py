@@ -69,3 +69,9 @@ def remove_from_cart(productId):
     return flask.redirect(flask.request.referrer or '/')
 
 
+@bp.route('', methods=['GET'])
+def cart():
+    return flask.render_template('order/cart.html')
+
+
+

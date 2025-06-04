@@ -60,6 +60,7 @@ def shop(category, sub_category, subsub_category):
     else:
         flask.g.cursor.execute(f'SELECT * FROM products {availability_query} AND categoryId IN {parent_categories_ids} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
+    max_price_gross = max(product['priceNet']*(1+product['vatRate']/100) for product in products)
 
     #render template
     resp = flask.make_response(flask.render_template('shop/products.html', 
@@ -71,7 +72,8 @@ def shop(category, sub_category, subsub_category):
         current_page=page,
         total_pages=total_pages,
         total_products=total_products,
-        active_categories=active_categories
+        active_categories=active_categories,
+        max_price_gross=max_price_gross
     ))
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'], path='/')
     return resp

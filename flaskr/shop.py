@@ -34,6 +34,13 @@ def shop(category, sub_category, subsub_category):
     active_categories = get_active_categories(category, sub_category, subsub_category)
     parent_categories_ids = get_parent_categories_ids(active_categories)
 
+    #get total products in category
+    if parent_categories_ids == '()':
+        flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products')
+    else:
+        flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products WHERE categoryId IN {parent_categories_ids}')
+    total_products = flask.g.cursor.fetchone()['total']
+
     #availability
     if user_config['availability'] == 'available':
         availability_query = 'WHERE stock > 0'
@@ -59,8 +66,8 @@ def shop(category, sub_category, subsub_category):
         flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products {availability_query} {price_filter_query}')
     else:
         flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM products {availability_query} {price_filter_query} AND categoryId IN {parent_categories_ids}')
-    total_products = flask.g.cursor.fetchone()['total']
-    total_pages = (total_products + user_config['products_visibility_per_page'] - 1)//user_config['products_visibility_per_page']
+    total_products_with_filters = flask.g.cursor.fetchone()['total']
+    total_pages = (total_products_with_filters + user_config['products_visibility_per_page'] - 1)//user_config['products_visibility_per_page']
     if page < 1 or ((page > total_pages) and (total_pages != 0)):
         flask.abort(404)
     offset = (page - 1)*user_config['products_visibility_per_page']
@@ -93,6 +100,7 @@ def shop(category, sub_category, subsub_category):
         current_availability=user_config['availability'],
         current_page=page,
         total_pages=total_pages,
+        total_products_with_filters=total_products_with_filters,
         total_products=total_products,
         active_categories=active_categories,
         max_price_gross=max_price_gross,

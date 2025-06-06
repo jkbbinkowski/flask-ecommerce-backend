@@ -34,6 +34,7 @@ def delete_expired_forgot_pass_tokens(mydb, cursor):
         cursor.execute('DELETE FROM carts WHERE id = %s', (cart['id'],))
     mydb.commit()
 
+
 if __name__ == '__main__':
     mydb = flaskr.functions.connect_db()
     cursor = mydb.cursor()

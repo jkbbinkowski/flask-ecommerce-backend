@@ -57,7 +57,6 @@ def shop(category, sub_category, subsub_category):
 
     #price_filter
     if unquote(flask.request.base_url) != unquote(flask.request.referrer.split('?')[0]):
-        print('test')
         user_config['price_filter'] = 'off'
     if user_config['price_filter'] == 'on':
         price_filter_query = f'AND priceNet*(1+vatRate/100) >= {user_config["price_filter_values"].split("to")[0]} AND priceNet*(1+vatRate/100) <= {user_config["price_filter_values"].split("to")[1]}'

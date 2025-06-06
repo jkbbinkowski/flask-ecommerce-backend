@@ -111,15 +111,19 @@ def forgot_password():
         except:
             return {'errors': flaskr.static_cache.ERROR_MESSAGES['auth']['forgot-pass-token-already-generated']}, 409
 
+        email_sent = False
         try:
             if token_generated:
                 email_data = {'template': config['EMAIL_PATHS']['forgot_pass'], 'subject': config['EMAIL_SUBJECTS']['forgot_pass'], 'email': user_data['email'], 'name': user_data['firstName'], 'token': token, 'expiration_time_min': int((int(config['AUTH']['forgot_pass_token_expiration_time'])/60))}
                 flaskr.functions.send_transactional_email(email_data)
+                email_sent = True
         except Exception as e:
             flask.g.cursor.execute('DELETE FROM forgotPassTokens WHERE userID = %s', (user_data['id'],))
             flask.g.conn.commit()
             return '', 500
 
+        if not email_sent:
+            time.sleep(int(config['ADVANCED']['simulate_forgot_pass_email_send_time']))
         return flaskr.static_cache.SUCCESS_MESSAGES['auth']['forgot-pass-token-generated'], 200
     
 

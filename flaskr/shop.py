@@ -11,6 +11,7 @@ import datetime
 import base64
 import json
 import flaskr.functions
+from urllib.parse import unquote
 
 
 dotenv.load_dotenv()
@@ -54,11 +55,20 @@ def shop(category, sub_category, subsub_category):
     else:
         availability_query = 'WHERE stock >= 0'
 
+    #price_filter
+    if unquote(flask.request.base_url) != unquote(flask.request.referrer.split('?')[0]):
+        print('test')
+        user_config['price_filter'] = 'off'
+    if user_config['price_filter'] == 'on':
+        price_filter_query = f'AND priceNet*(1+vatRate/100) >= {user_config["price_filter_values"].split("to")[0]} AND priceNet*(1+vatRate/100) <= {user_config["price_filter_values"].split("to")[1]}'
+    else:
+        price_filter_query = ''
+
     #get products
     if parent_categories_ids == '()':
-        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {price_filter_query} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     else:
-        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} AND categoryId IN {parent_categories_ids} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {price_filter_query} AND categoryId IN {parent_categories_ids} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
     try:
         max_price_gross = max(product['priceNet']*(1+product['vatRate']/100) for product in products)
@@ -84,6 +94,9 @@ def shop(category, sub_category, subsub_category):
         total_products=total_products,
         active_categories=active_categories,
         max_price_gross=max_price_gross,
+        current_price_filter=user_config['price_filter'],
+        current_price_filter_min=user_config['price_filter_values'].split('to')[0],
+        current_price_filter_max=user_config['price_filter_values'].split('to')[1],
         shop = shop
     ))
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'], path='/')

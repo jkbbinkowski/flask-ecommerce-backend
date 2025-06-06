@@ -58,6 +58,7 @@ def add_to_cart():
 
 
 @bp.route(config['ACTIONS']['remove']+'/<productId>', methods=['GET'])
+@bp.route(config['ACTIONS']['remove'], methods=['GET'], defaults={'productId': None})
 def remove_from_cart(productId):
     cart_id = None
     if flask.session.get('logged'):
@@ -68,7 +69,10 @@ def remove_from_cart(productId):
         cart_id = flask.g.cursor.fetchone()['id']
 
     flask.g.cursor.execute('UPDATE carts SET lastModTime = %s WHERE id = %s', (int(time.time()), cart_id))
-    flask.g.cursor.execute('DELETE FROM cartProducts WHERE productId = %s and cartId = %s', (productId, cart_id))
+    if productId:
+        flask.g.cursor.execute('DELETE FROM cartProducts WHERE productId = %s and cartId = %s', (productId, cart_id))
+    else:
+        flask.g.cursor.execute('DELETE FROM cartProducts WHERE cartId = %s', (cart_id,))
     flask.g.conn.commit()
 
     return flask.redirect(flask.request.referrer or '/')

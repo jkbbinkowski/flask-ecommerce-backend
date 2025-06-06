@@ -54,8 +54,12 @@ def shop(category, sub_category, subsub_category):
         availability_query = 'WHERE stock >= 0'
 
     #price_filter
-    if urllib.parse.unquote(flask.request.base_url) != urllib.parse.unquote(flask.request.referrer.split('?')[0]):
+    try:
+        if urllib.parse.unquote(flask.request.base_url) != urllib.parse.unquote(flask.request.referrer.split('?')[0]):
+            user_config['price_filter'] = 'off'
+    except:
         user_config['price_filter'] = 'off'
+
     if user_config['price_filter'] == 'on':
         price_filter_query = f'AND priceNet*(1+vatRate/100) >= {user_config["price_filter_values"].split("to")[0]} AND priceNet*(1+vatRate/100) <= {user_config["price_filter_values"].split("to")[1]}'
     else:

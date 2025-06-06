@@ -109,7 +109,6 @@ def get_config_cookie(request):
 
     return_dict = {
         'config_cookie': ','.join(str(x) for x in user_config),
-        'expires': datetime.datetime.now() + datetime.timedelta(days=365*10),
         'products_visibility_per_page': user_config[0],
         'sorting_option': user_config[1],
         'availability': user_config[2],

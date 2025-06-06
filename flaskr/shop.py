@@ -7,11 +7,9 @@ import flask
 import dotenv
 import configparser
 import flaskr.jinja_filters
-import datetime
-import base64
+import urllib.parse
 import json
 import flaskr.functions
-from urllib.parse import unquote
 
 
 dotenv.load_dotenv()
@@ -56,7 +54,7 @@ def shop(category, sub_category, subsub_category):
         availability_query = 'WHERE stock >= 0'
 
     #price_filter
-    if unquote(flask.request.base_url) != unquote(flask.request.referrer.split('?')[0]):
+    if urllib.parse.unquote(flask.request.base_url) != urllib.parse.unquote(flask.request.referrer.split('?')[0]):
         user_config['price_filter'] = 'off'
     if user_config['price_filter'] == 'on':
         price_filter_query = f'AND priceNet*(1+vatRate/100) >= {user_config["price_filter_values"].split("to")[0]} AND priceNet*(1+vatRate/100) <= {user_config["price_filter_values"].split("to")[1]}'
@@ -98,7 +96,7 @@ def shop(category, sub_category, subsub_category):
         current_price_filter_max=user_config['price_filter_values'].split('to')[1],
         shop = shop
     ))
-    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], expires=user_config['expires'], path='/')
+    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], path='/')
     return resp
 
 

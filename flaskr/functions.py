@@ -83,16 +83,18 @@ def build_category_tree(flat_categories):
 
 
 def get_config_cookie(request):
+    default_cookie = [int(config['USER_PREF_COOKIE']['default_visibility_per_page']), config['USER_PREF_COOKIE']['default_sorting_option'], config['USER_PREF_COOKIE']['default_availability'], config['USER_PREF_COOKIE']['default_price_filter'], config['USER_PREF_COOKIE']['default_price_filter_values']]
+
     try:
         config_cookie = base64.b64decode(request.cookies.get(config['COOKIE_NAMES']['user_preferences'])).decode('utf-8').split(',')
         user_config = [int(config_cookie[0]), config_cookie[1], config_cookie[2], config_cookie[3], config_cookie[4]]
-        if not user_config[0] in get_config_list('int', config['PRODUCTS']['visibility_per_page_options']):
+        if not user_config[0] in get_config_list('int', config['USER_PREF_COOKIE']['visibility_per_page_options']):
             raise Exception('Invalid config cookie data')
-        if not user_config[1] in get_config_list('str', config['PRODUCTS']['sorting_option_values']):
+        if not user_config[1] in get_config_list('str', config['USER_PREF_COOKIE']['sorting_option_values']):
             raise Exception('Invalid config cookie data')
-        if not user_config[2] in get_config_list('str', config['PRODUCTS']['availability_values']):
+        if not user_config[2] in get_config_list('str', config['USER_PREF_COOKIE']['availability_values']):
             raise Exception('Invalid config cookie data')
-        if not user_config[3] in get_config_list('str', config['PRODUCTS']['price_filter_values']):
+        if not user_config[3] in get_config_list('str', config['USER_PREF_COOKIE']['price_filter_values']):
             raise Exception('Invalid config cookie data')
         if ('to' not in user_config[4]):
             splitted = user_config[4].split('to')
@@ -105,7 +107,7 @@ def get_config_cookie(request):
                 raise Exception('Invalid config cookie data')
             user_config[4] = splitted
     except Exception as e:
-        user_config = [int(config['PRODUCTS']['default_visibility_per_page']), config['PRODUCTS']['default_sorting_option'], config['PRODUCTS']['default_availability'], config['PRODUCTS']['default_price_filter'], config['PRODUCTS']['default_price_filter_values']]
+        user_config = default_cookie
 
     return_dict = {
         'config_cookie': ','.join(str(x) for x in user_config),
@@ -113,10 +115,11 @@ def get_config_cookie(request):
         'sorting_option': user_config[1],
         'availability': user_config[2],
         'price_filter': user_config[3],
-        'price_filter_values': user_config[4]
+        'price_filter_values': user_config[4],
+        'default_cookie': ','.join(str(x) for x in default_cookie)
     }
-    
     return_dict['config_cookie'] = base64.b64encode(return_dict['config_cookie'].encode('utf-8')).decode('utf-8')
+    return_dict['default_cookie'] = base64.b64encode(return_dict['default_cookie'].encode('utf-8')).decode('utf-8')
 
     return return_dict
 

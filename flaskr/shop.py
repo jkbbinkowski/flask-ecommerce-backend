@@ -67,9 +67,9 @@ def shop(category, sub_category, subsub_category):
 
     #get products
     if parent_categories_ids == '()':
-        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {price_filter_query} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {price_filter_query} {json.loads(config['USER_PREF_COOKIE']["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     else:
-        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {price_filter_query} AND categoryId IN {parent_categories_ids} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
+        flask.g.cursor.execute(f'SELECT * FROM products {availability_query} {price_filter_query} AND categoryId IN {parent_categories_ids} {json.loads(config['USER_PREF_COOKIE']["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
     try:
         max_price_gross = max(product['priceNet']*(1+product['vatRate']/100) for product in products)
@@ -77,10 +77,11 @@ def shop(category, sub_category, subsub_category):
         max_price_gross = 0
 
     shop = {
-        'sorting_option_names': flaskr.functions.get_config_list('str', config['PRODUCTS']['sorting_option_names']),
-        'sorting_option_values': flaskr.functions.get_config_list('str', config['PRODUCTS']['sorting_option_values']),
-        'products_visibility_per_page': flaskr.functions.get_config_list('int', config['PRODUCTS']['visibility_per_page_options']),
-        'products_availability_values': flaskr.functions.get_config_list('str', config['PRODUCTS']['availability_values'])
+        'sorting_option_names': flaskr.functions.get_config_list('str', config['USER_PREF_COOKIE']['sorting_option_names']),
+        'sorting_option_values': flaskr.functions.get_config_list('str', config['USER_PREF_COOKIE']['sorting_option_values']),
+        'products_visibility_per_page': flaskr.functions.get_config_list('int', config['USER_PREF_COOKIE']['visibility_per_page_options']),
+        'products_availability_values': flaskr.functions.get_config_list('str', config['USER_PREF_COOKIE']['availability_values']),
+        'default_list': [config['USER_PREF_COOKIE']['default_visibility_per_page'], config['USER_PREF_COOKIE']['default_sorting_option'], config['USER_PREF_COOKIE']['default_availability'], config['USER_PREF_COOKIE']['default_price_filter']]
     }
 
     #render template
@@ -98,8 +99,10 @@ def shop(category, sub_category, subsub_category):
         current_price_filter=user_config['price_filter'],
         current_price_filter_min=user_config['price_filter_values'].split('to')[0],
         current_price_filter_max=user_config['price_filter_values'].split('to')[1],
+        default_cookie = 1 if user_config['config_cookie'] == user_config['default_cookie'] else 0,
         shop = shop
     ))
+    print(user_config['config_cookie'], user_config['default_cookie'])
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], path='/')
     return resp
 

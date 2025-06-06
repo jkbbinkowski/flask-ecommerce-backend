@@ -60,7 +60,10 @@ def shop(category, sub_category, subsub_category):
     else:
         flask.g.cursor.execute(f'SELECT * FROM products {availability_query} AND categoryId IN {parent_categories_ids} {json.loads(config["PRODUCTS"]["sorting_option_queries"])[user_config["sorting_option"]]} LIMIT {user_config["products_visibility_per_page"]} OFFSET {offset}')
     products = flask.g.cursor.fetchall()
-    max_price_gross = max(product['priceNet']*(1+product['vatRate']/100) for product in products)
+    try:
+        max_price_gross = max(product['priceNet']*(1+product['vatRate']/100) for product in products)
+    except:
+        max_price_gross = 0
 
     shop = {
         'sorting_option_names': flaskr.functions.get_config_list('str', config['PRODUCTS']['sorting_option_names']),

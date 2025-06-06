@@ -20,7 +20,7 @@ import uuid
 import time
 import flaskr.static_cache
 import traceback
-
+import hashlib
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -110,13 +110,32 @@ def get_config_cookie(request):
 
 
 def init_cart(response):
-    # create new uuid cart if there is NO cart cookie
+    #prevent duplicates of uuid carts for concurrent requests withing the same session
+    raw_id = f"{flask.request.remote_addr}:{flask.request.headers.get('User-Agent')}"
+    hashed_id = hashlib.sha256(raw_id.encode()).hexdigest()
+    lock_key = f"cart_lock:{ hashed_id }"
+    if (not flask.g.redis_client.set(lock_key, '1', nx=True, ex=int(config['ADVANCED']['cart_init_lock_time']))) or ('static' in flask.request.endpoint):
+        return response
+    
     cart_cookie = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
-    if (not cart_cookie):
+
+    # if user is logged in, check if there is only one cart for user and if not, delete the old one/s and create a new one
+    if flask.session.get('logged'):
+        flask.g.cursor.execute('SELECT COUNT(*) FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        if flask.g.cursor.fetchone()['COUNT(*)'] != 1:
+            flask.g.cursor.execute('DELETE FROM carts WHERE userId = %s', (flask.session['user_id'],))
+            flask.g.conn.commit()
+            flask.g.cursor.execute('INSERT INTO carts (userId, lastModTime) VALUES (%s, %s)', (flask.session['user_id'], int(time.time())))
+            flask.g.conn.commit()
+
+    # create new uuid cart if there is NO cart cookie
+    elif (not cart_cookie):
         cart_uuid = str(uuid.uuid4())
         flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (cart_uuid, None, int(time.time())))
         flask.g.conn.commit()
         response.set_cookie(config['COOKIE_NAMES']['cart'], cart_uuid, expires=datetime.datetime.now() + datetime.timedelta(days=365*10), path='/')
+
+    # if there is a cart cookie, check if it is valid and if not, create a new one
     else:
         flask.g.cursor.execute('SELECT COUNT(*) FROM carts WHERE uuid = %s', (cart_cookie,))
         if not flask.g.cursor.fetchone()['COUNT(*)']:

@@ -87,11 +87,11 @@ def get_config_cookie(request):
     try:
         config_cookie = base64.b64decode(request.cookies.get(config['COOKIE_NAMES']['user_preferences'])).decode('utf-8').split(',')
         user_config = [int(config_cookie[0]), config_cookie[1], config_cookie[2]]
-        if not user_config[0] in flaskr.static_cache.PRODUCTS_VISIBILITY_PER_PAGE:
+        if not user_config[0] in get_config_list('int', config['PRODUCTS']['visibility_per_page_options']):
             raise Exception('Invalid config cookie data')
-        if not user_config[1] in flaskr.static_cache.PRODUCTS_SORTING_OPTION_VALUES:
+        if not user_config[1] in get_config_list('str', config['PRODUCTS']['sorting_option_values']):
             raise Exception('Invalid config cookie data')
-        if not user_config[2] in flaskr.static_cache.PRODUCTS_AVAILABILITY_VALUES:
+        if not user_config[2] in get_config_list('str', config['PRODUCTS']['availability_values']):
             raise Exception('Invalid config cookie data')
     except Exception as e:
         user_config = [int(config['PRODUCTS']['default_visibility_per_page']), config['PRODUCTS']['default_sorting_option'], config['PRODUCTS']['default_availability']]
@@ -206,3 +206,10 @@ def migrate_cart(migration_type):
         print(traceback.format_exc())
         print(e)
         pass
+
+
+def get_config_list(type, config_list):
+    if type == 'int':
+        return [int(x.strip()) for x in config_list.split(',')]
+    elif type == 'str':
+        return [x.strip() for x in config_list.split(',')]

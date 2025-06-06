@@ -97,11 +97,6 @@ with app.app_context():
         flaskr.static_cache.ERROR_MESSAGES = json.load(f)
     with open(f'{working_dir}flaskr/json/successes.json', 'r') as f:
         flaskr.static_cache.SUCCESS_MESSAGES = json.load(f)
-    flaskr.static_cache.PRODUCTS_VISIBILITY_PER_PAGE = [int(x.strip()) for x in config['PRODUCTS']['visibility_per_page_options'].split(',')]
-    flaskr.static_cache.PRODUCTS_SORTING_OPTION_NAMES = [x.strip() for x in config['PRODUCTS']['sorting_option_names'].split(',')]
-    flaskr.static_cache.PRODUCTS_SORTING_OPTION_VALUES = [x.strip() for x in config['PRODUCTS']['sorting_option_values'].split(',')]
-    flaskr.static_cache.PRODUCTS_AVAILABILITY_VALUES = [x.strip() for x in config['PRODUCTS']['availability_values'].split(',')]
-    flaskr.static_cache.PRODUCTS_AVAILABILITY_DEFAULT = config['PRODUCTS']['default_availability']
     cursor.close()
     conn.close()
 
@@ -142,14 +137,8 @@ def inject_company_data():
         'id': flask.session.get('user_id', None),
         'name': flask.session.get('name', None),
     }
-    shop = {
-        'sorting_option_names': flaskr.static_cache.PRODUCTS_SORTING_OPTION_NAMES,
-        'sorting_option_values': flaskr.static_cache.PRODUCTS_SORTING_OPTION_VALUES,
-        'products_visibility_per_page': flaskr.static_cache.PRODUCTS_VISIBILITY_PER_PAGE,
-        'products_availability_values': flaskr.static_cache.PRODUCTS_AVAILABILITY_VALUES
-    }
     referrer = flask.request.referrer
-    return dict(config=config, current_year=datetime.now().year, user=user, shop=shop, categories=flaskr.static_cache.CATEGORIES, referrer=referrer)
+    return dict(config=config, current_year=datetime.now().year, user=user, categories=flaskr.static_cache.CATEGORIES, referrer=referrer)
 
 
 @app.errorhandler(404)

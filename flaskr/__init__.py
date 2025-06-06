@@ -61,6 +61,7 @@ app.config['TESTING'] = int(config['APP']['testing'])
 app.config['DEBUG'] = int(config['APP']['debug'])
 app.config['FLASK_ENV'] = config['APP']['environment']
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+app.config['SESSION_COOKIE_NAME'] = config['COOKIE_NAMES']['session']
 app.jinja_env.auto_reload = int(config['APP']['templates_auto_reload'])
 if int(config['APP']['set_cookie_settings']) == 1:
     app.config['SESSION_COOKIE_NAME'] = config['COOKIE_NAMES']['session']

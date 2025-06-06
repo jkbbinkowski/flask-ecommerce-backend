@@ -37,7 +37,7 @@ def delete_expired_forgot_pass_tokens(mydb, cursor):
 
 if __name__ == '__main__':
     mydb = flaskr.functions.connect_db()
-    cursor = mydb.cursor()
+    cursor = mydb.cursor(dictionary=True)
 
     delete_expired_forgot_pass_tokens(mydb, cursor)
 

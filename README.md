@@ -60,7 +60,7 @@ Remove "example." header from the file.<br>
 | STATIC_PDF | Names of files located in /flaskr/static/pdf. They are meant to be used by Jinja2 while rendering the templates. None of them is used by the backend itself. |
 | PRODUCTS | Configuration for store such as visibility per page, sorting options. |
 | COOKIE_NAMES | Names of the cookie files used by the application. |
-| ADVANCED | Advanced settings, which are not advised to be changed, they are self explanatory, related directly to logic behind some functions. | 
+| ADVANCED | Advanced settings, which are not advised to be changed, related directly to logic behind some methods. They are self explanatory. | 
 
 ### .env
 This file contains all the sensitive configuration.<br>

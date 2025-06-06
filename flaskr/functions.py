@@ -85,22 +85,25 @@ def build_category_tree(flat_categories):
 def get_config_cookie(request):
     try:
         config_cookie = base64.b64decode(request.cookies.get(config['COOKIE_NAMES']['user_preferences'])).decode('utf-8').split(',')
-        user_config = [int(config_cookie[0]), config_cookie[1], config_cookie[2]]
+        user_config = [int(config_cookie[0]), config_cookie[1], config_cookie[2], config_cookie[3]]
         if not user_config[0] in get_config_list('int', config['PRODUCTS']['visibility_per_page_options']):
             raise Exception('Invalid config cookie data')
         if not user_config[1] in get_config_list('str', config['PRODUCTS']['sorting_option_values']):
             raise Exception('Invalid config cookie data')
         if not user_config[2] in get_config_list('str', config['PRODUCTS']['availability_values']):
             raise Exception('Invalid config cookie data')
+        if not user_config[3] in get_config_list('str', config['PRODUCTS']['price_filter_values']):
+            raise Exception('Invalid config cookie data')
     except Exception as e:
-        user_config = [int(config['PRODUCTS']['default_visibility_per_page']), config['PRODUCTS']['default_sorting_option'], config['PRODUCTS']['default_availability']]
+        user_config = [int(config['PRODUCTS']['default_visibility_per_page']), config['PRODUCTS']['default_sorting_option'], config['PRODUCTS']['default_availability'], config['PRODUCTS']['default_price_filter']]
 
     return_dict = {
         'config_cookie': ','.join(str(x) for x in user_config),
         'expires': datetime.datetime.now() + datetime.timedelta(days=365*10),
         'products_visibility_per_page': user_config[0],
         'sorting_option': user_config[1],
-        'availability': user_config[2]
+        'availability': user_config[2],
+        'price_filter': user_config[3]
     }
     
     return_dict['config_cookie'] = base64.b64encode(return_dict['config_cookie'].encode('utf-8')).decode('utf-8')

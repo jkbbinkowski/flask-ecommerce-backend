@@ -24,7 +24,9 @@ def delete_expired_forgot_pass_tokens(mydb, cursor):
     deletion_threshold = int(time.time()) - int(config['AUTH']['forgot_pass_token_expiration_time'])
     cursor.execute('DELETE FROM forgotPassTokens WHERE creationTime <= %s', (deletion_threshold,))
     mydb.commit()
-    
+
+
+def delete_expired_carts(mydb, cursor):  
     # delete carts that are expired
     deletion_threshold = int(time.time()) - int(config['GLOBAL']['cart_expiration_time'])
     cursor.execute('SELECT * FROM carts WHERE lastModTime < %s and uuid is NOT NULL', (deletion_threshold,))
@@ -40,6 +42,7 @@ if __name__ == '__main__':
     cursor = mydb.cursor(dictionary=True)
 
     delete_expired_forgot_pass_tokens(mydb, cursor)
+    delete_expired_carts(mydb, cursor)
 
     cursor.close()
     mydb.close()

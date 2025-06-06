@@ -18,7 +18,6 @@ import flask
 import datetime
 import uuid
 import time
-import flaskr.static_cache
 import traceback
 import hashlib
 

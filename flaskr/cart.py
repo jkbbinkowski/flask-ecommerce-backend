@@ -8,6 +8,7 @@ import dotenv
 import configparser
 import json
 import flaskr.functions
+import time
 
 
 dotenv.load_dotenv()
@@ -49,6 +50,7 @@ def add_to_cart():
             return {"errors": flaskr.static_cache.ERROR_MESSAGES['cart']['not_enough_in_stock']}, 400
         flask.g.cursor.execute('INSERT INTO cartProducts (productId, amount, cartId) VALUES (%s, %s, %s)', (data['productId'], data['amount'], cart_id))
         flask.g.conn.commit()
+    flask.g.cursor.execute('UPDATE carts SET lastModTime = %s WHERE id = %s', (int(time.time()), cart_id))
 
     return flaskr.static_cache.SUCCESS_MESSAGES['cart']['product_added'], 202
 
@@ -63,6 +65,7 @@ def remove_from_cart(productId):
         flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (flask.request.cookies.get(config['COOKIE_NAMES']['cart']),))
         cart_id = flask.g.cursor.fetchone()['id']
 
+    flask.g.cursor.execute('UPDATE carts SET lastModTime = %s WHERE id = %s', (int(time.time()), cart_id))
     flask.g.cursor.execute('DELETE FROM cartProducts WHERE productId = %s and cartId = %s', (productId, cart_id))
     flask.g.conn.commit()
 
@@ -89,6 +92,7 @@ def edit_cart_product(productId):
         flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (flask.request.cookies.get(config['COOKIE_NAMES']['cart']),))
         cart_id = flask.g.cursor.fetchone()['id']
 
+    flask.g.cursor.execute('UPDATE carts SET lastModTime = %s WHERE id = %s', (int(time.time()), cart_id))
     flask.g.cursor.execute('UPDATE cartProducts SET amount = %s WHERE productId = %s and cartId = %s', (data['amount'], productId, cart_id))
     flask.g.conn.commit()
 

@@ -111,11 +111,19 @@ def get_config_cookie(request):
 
 def init_cart(response):
     # create new uuid cart if there is NO cart cookie
-    if (not flask.request.cookies.get(config['COOKIE_NAMES']['cart'])):
+    cart_cookie = flask.request.cookies.get(config['COOKIE_NAMES']['cart'])
+    if (not cart_cookie):
         cart_uuid = str(uuid.uuid4())
         flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (cart_uuid, None, int(time.time())))
         flask.g.conn.commit()
         response.set_cookie(config['COOKIE_NAMES']['cart'], cart_uuid, expires=datetime.datetime.now() + datetime.timedelta(days=365*10), path='/')
+    else:
+        flask.g.cursor.execute('SELECT COUNT(*) FROM carts WHERE uuid = %s', (cart_cookie,))
+        if not flask.g.cursor.fetchone()['COUNT(*)']:
+            cart_uuid = str(uuid.uuid4())
+            flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (cart_uuid, None, int(time.time())))
+            flask.g.conn.commit()
+            response.set_cookie(config['COOKIE_NAMES']['cart'], cart_uuid, expires=datetime.datetime.now() + datetime.timedelta(days=365*10), path='/')
         
 
 def get_cart_products():

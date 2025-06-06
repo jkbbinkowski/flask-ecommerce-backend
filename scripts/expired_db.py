@@ -28,6 +28,11 @@ def delete_expired_forgot_pass_tokens(mydb, cursor):
     # delete carts that are expired
     deletion_threshold = int(time.time()) - int(config['GLOBAL']['cart_expiration_time'])
     cursor.execute('SELECT * FROM carts WHERE lastModTime < %s', (deletion_threshold,))
+    carts = cursor.fetchall()
+    for cart in carts:
+        cursor.execute('DELETE FROM cartProducts WHERE cartId = %s', (cart['id'],))
+        cursor.execute('DELETE FROM carts WHERE id = %s', (cart['id'],))
+    mydb.commit()
 
 if __name__ == '__main__':
     mydb = flaskr.functions.connect_db()

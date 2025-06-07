@@ -20,6 +20,11 @@ config.read(f'{working_dir}/config.ini')
 bp = flask.Blueprint('cart', __name__, url_prefix=config['ENDPOINTS']['cart'])
 
 
+@bp.route('', methods=['GET'])
+def cart():
+    return flask.render_template('order/cart.html')
+
+
 @bp.route(config['ACTIONS']['add'], methods=['POST'])
 def add_to_cart():
     data = json.loads(flask.request.get_data().decode())
@@ -103,11 +108,3 @@ def edit_cart_product(productId):
     flask.g.conn.commit()
 
     return flaskr.static_cache.SUCCESS_MESSAGES['cart']['product_edited'], 202
-
-
-@bp.route('', methods=['GET'])
-def cart():
-    return flask.render_template('order/cart.html')
-
-
-

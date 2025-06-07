@@ -85,8 +85,8 @@ from . import shop
 app.register_blueprint(shop.bp)
 from . import cart
 app.register_blueprint(cart.bp)
-
-csrf.exempt(cart.bp) ### REMOVE LAT3R !!!
+from . import order
+app.register_blueprint(order.bp)
 
 
 # load static data

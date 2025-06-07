@@ -110,7 +110,6 @@ def shop(category, sub_category, subsub_category):
         default_cookie = 1 if user_config['config_cookie'] == user_config['default_cookie'] else 0,
         shop = shop
     ))
-    print(user_config['config_cookie'], user_config['default_cookie'])
     resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], path='/')
     return resp
 

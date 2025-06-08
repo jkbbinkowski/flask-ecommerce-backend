@@ -40,7 +40,7 @@ def delete_expired_carts(mydb, cursor):
 def delete_expired_draft_orders(mydb, cursor):
     # delete draft orders that are expired
     deletion_threshold = int(time.time()) - int(config['ORDERS']['draft_expiration_time'])
-    cursor.execute('DELETE FROM draftOrders WHERE timestamp <= %s', (deletion_threshold),)
+    cursor.execute('DELETE FROM draftOrders WHERE timestamp <= %s', (deletion_threshold,))
     mydb.commit()
 
 

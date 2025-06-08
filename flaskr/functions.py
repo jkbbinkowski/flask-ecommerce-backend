@@ -128,7 +128,7 @@ def init_cart(response):
     #prevent duplicates of uuid carts for concurrent requests withing the same session
     raw_id = f"{flask.request.remote_addr}:{flask.request.headers.get('User-Agent')}"
     hashed_id = hashlib.sha256(raw_id.encode()).hexdigest()
-    lock_key = f"cart_lock:{ hashed_id }"
+    lock_key = f"{ config['REDIS_QUEUES']['init_cart_lock_queue'] }:{ hashed_id }"
     if (not flask.g.redis_client.set(lock_key, '1', nx=True, ex=int(config['ADVANCED']['cart_init_lock_time']))) or ('static' in flask.request.url):
         return response
     

@@ -21,6 +21,11 @@ config.read(f'{working_dir}/config.ini')
 bp = flask.Blueprint('order', __name__, url_prefix=config['ENDPOINTS']['order'])
 
 
+@bp.route(f'{config['ENDPOINTS']['to_checkout']}/<draft_order_uuid>', methods=['GET'])
+def order(draft_order_uuid):
+    return draft_order_uuid
+
+
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
 def calculate_shipping_cost():
     
@@ -30,11 +35,13 @@ def calculate_shipping_cost():
     return_json = {
         'shipping_methods': {
             str(uuid.uuid4()): {
+                'id': 1,
                 'cost': 100,
                 'currency': 'PLN',
                 'name': 'Name of the method'
             },
             str(uuid.uuid4()): {
+                'id': 2,
                 'cost': 200,
                 'currency': 'PLN',
                 'name': 'Name of the method 2'
@@ -42,9 +49,10 @@ def calculate_shipping_cost():
         }
     }
 
-    if create_draft_order(return_json['shipping_methods']) != True:
+    draft_order_uuid = create_draft_order(return_json['shipping_methods'])
+    if not draft_order_uuid:
         return flask.jsonify({'errors': flaskr.static_cache.ERROR_MESSAGES['order']['failed_to_calculate_shipping']}), 500
-    flask.session['order_shipping_methods'] = return_json['shipping_methods']
+    return_json.update({'douuid': draft_order_uuid})
 
     return flask.jsonify(return_json)
 
@@ -72,11 +80,10 @@ def create_draft_order(shipping_methods):
             sum_products += round(flask.g.cursor.fetchone()['priceNet'] * product['amount'], 2)
 
         draft_order_uuid = str(uuid.uuid4())
-        flask.session['draft_order_uuid'] = draft_order_uuid
         flask.g.cursor.execute('INSERT INTO draftOrders (uuid, products, productsSumNet, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s)', (draft_order_uuid, json.dumps(cart_products), sum_products, json.dumps(shipping_methods), int(time.time())))
         flask.g.conn.commit()
 
-        return True
+        return draft_order_uuid
 
     except Exception as e:
         print(e)

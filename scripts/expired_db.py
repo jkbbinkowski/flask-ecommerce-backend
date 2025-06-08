@@ -29,11 +29,18 @@ def delete_expired_forgot_pass_tokens(mydb, cursor):
 def delete_expired_carts(mydb, cursor):  
     # delete carts that are expired
     deletion_threshold = int(time.time()) - int(config['GLOBAL']['cart_expiration_time'])
-    cursor.execute('SELECT * FROM carts WHERE lastModTime < %s and uuid is NOT NULL', (deletion_threshold,))
+    cursor.execute('SELECT * FROM carts WHERE lastModTime <= %s and uuid is NOT NULL', (deletion_threshold,))
     carts = cursor.fetchall()
     for cart in carts:
         cursor.execute('DELETE FROM cartProducts WHERE cartId = %s', (cart['id'],))
         cursor.execute('DELETE FROM carts WHERE id = %s', (cart['id'],))
+    mydb.commit()
+
+
+def delete_expired_draft_orders(mydb, cursor):
+    # delete draft orders that are expired
+    deletion_threshold = int(time.time()) - int(config['ORDERS']['draft_expiration_time'])
+    cursor.execute('DELETE FROM draftOrders WHERE timestamp <= %s', (deletion_threshold),)
     mydb.commit()
 
 
@@ -43,6 +50,7 @@ if __name__ == '__main__':
 
     delete_expired_forgot_pass_tokens(mydb, cursor)
     delete_expired_carts(mydb, cursor)
+    delete_expired_draft_orders(mydb, cursor)
 
     cursor.close()
     mydb.close()

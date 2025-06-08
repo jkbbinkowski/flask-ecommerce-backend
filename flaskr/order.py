@@ -29,12 +29,12 @@ def calculate_shipping_cost():
 
     return_json = {
         'shipping_methods': {
-            'uuid(here uuid number)': {
+            str(uuid.uuid4()): {
                 'cost': 100,
                 'currency': 'PLN',
                 'name': 'Name of the method'
             },
-            "uuid2": {
+            str(uuid.uuid4()): {
                 'cost': 200,
                 'currency': 'PLN',
                 'name': 'Name of the method 2'
@@ -73,7 +73,7 @@ def create_draft_order(shipping_methods):
 
         draft_order_uuid = str(uuid.uuid4())
         flask.session['draft_order_uuid'] = draft_order_uuid
-        flask.g.cursor.execute('INSERT INTO draftOrders (uuid, products, productsSumNet, shippingMethods) VALUES (%s, %s, %s, %s)', (draft_order_uuid, json.dumps(cart_products), sum_products, json.dumps(shipping_methods)))
+        flask.g.cursor.execute('INSERT INTO draftOrders (uuid, products, productsSumNet, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s)', (draft_order_uuid, json.dumps(cart_products), sum_products, json.dumps(shipping_methods), int(time.time())))
         flask.g.conn.commit()
 
         return True

@@ -38,5 +38,9 @@
         "product_not_found": [""],
         "not_enough_in_stock": [""],
         "amount_too_low": [""]
+    },
+    "order": {
+        "failed_to_calculate_shipping": [""],
+        "error_validating_draft_order": [""]
     }
 }

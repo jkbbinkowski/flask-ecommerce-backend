@@ -21,9 +21,18 @@ config.read(f'{working_dir}/config.ini')
 bp = flask.Blueprint('order', __name__, url_prefix=config['ENDPOINTS']['order'])
 
 
-@bp.route(f'{config['ENDPOINTS']['to_checkout']}/<draft_order_uuid>', methods=['GET'])
-def order(draft_order_uuid):
-    return draft_order_uuid
+@bp.route(f'{config['ENDPOINTS']['to_checkout']}/<draft_order_uuid>/<shipping_method_uuid>', methods=['GET'])
+def order(draft_order_uuid, shipping_method_uuid):
+    flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (draft_order_uuid,))
+    draft_order = flask.g.cursor.fetchone()
+    if not draft_order:
+        return flask.jsonify({'errors': flaskr.static_cache.ERROR_MESSAGES['order']['error_validating_draft_order']}), 404
+    
+    shipping_method = json.loads(draft_order['shippingMethods'])[shipping_method_uuid]
+    if not shipping_method:
+        return flask.jsonify({'errors': flaskr.static_cache.ERROR_MESSAGES['order']['error_validating_draft_order']}), 404
+
+    
 
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
@@ -80,7 +89,7 @@ def create_draft_order(shipping_methods):
             sum_products += round(flask.g.cursor.fetchone()['priceNet'] * product['amount'], 2)
 
         draft_order_uuid = str(uuid.uuid4())
-        flask.g.cursor.execute('INSERT INTO draftOrders (uuid, products, productsSumNet, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s)', (draft_order_uuid, json.dumps(cart_products), sum_products, json.dumps(shipping_methods), int(time.time())))
+        flask.g.cursor.execute('INSERT INTO draftOrders (cartId, uuid, products, productsSumNet, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s, %s)', (cart_id, draft_order_uuid, json.dumps(cart_products), sum_products, json.dumps(shipping_methods), int(time.time())))
         flask.g.conn.commit()
 
         return draft_order_uuid

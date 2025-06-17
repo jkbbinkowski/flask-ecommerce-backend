@@ -40,7 +40,7 @@ def order(draft_order_uuid, shipping_method_uuid):
         product_data = flask.g.cursor.fetchone()
         products_data.append(product_data)
 
-    return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method)
+    return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid)
 
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])

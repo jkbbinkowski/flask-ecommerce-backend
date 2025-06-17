@@ -29,7 +29,8 @@ bp = flask.Blueprint('auth', __name__, url_prefix='/')
 @logout_required
 def login():
     if flask.request.method == 'GET':
-        return flask.render_template('auth/login.html')
+        args = flask.request.args
+        return flask.render_template('auth/login.html', args=args)
 
     elif flask.request.method == 'POST':
         data = json.loads(flask.request.get_data().decode())

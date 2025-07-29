@@ -203,7 +203,8 @@ def validate_billing_data(data):
             if not re.search(r'[A-Z]', data['bill-ctr-code']):
                 errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_country'])
     else:
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_country'])
+        if data['bill-ctr'] != '':
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_country'])
     if (data['bill-vat']) != '':
         if not re.search(r'[0-9]', data['bill-vat']) or (len(data['bill-vat']) > 45):
             errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_tax_number'])

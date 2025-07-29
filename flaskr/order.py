@@ -44,6 +44,8 @@ def order(draft_order_uuid, shipping_method_uuid):
     if flask.session.get('logged', False):
         flask.g.cursor.execute('SELECT * FROM shippingAddresses WHERE userId = %s LIMIT 1', (flask.session.get('user_id', None),))
         logged_data['main_shipping_address'] = flask.g.cursor.fetchall()[0]
+        flask.g.cursor.execute('SELECT * FROM billingData WHERE userId = %s LIMIT 1', (flask.session.get('user_id', None),))
+        logged_data['main_billing_data'] = flask.g.cursor.fetchall()[0]
 
     return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid, logged_data=logged_data)
 

@@ -3,6 +3,7 @@
 # For license terms, see: https://github.com/jkbbinkowski/flask-ecommerce-backend/blob/master/LICENSE
 
 import os
+import sys
 import flask
 import dotenv
 import configparser
@@ -23,6 +24,8 @@ bp = flask.Blueprint('order', __name__, url_prefix=config['ENDPOINTS']['order'])
 
 @bp.route(f'{config['ENDPOINTS']['to_checkout']}/<draft_order_uuid>/<shipping_method_uuid>', methods=['GET'])
 def order(draft_order_uuid, shipping_method_uuid):
+    shipping_data_uuid = flask.request.args.get('sauuid', None)
+
     flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (draft_order_uuid,))
     draft_order = flask.g.cursor.fetchone()
     if not draft_order:
@@ -42,8 +45,15 @@ def order(draft_order_uuid, shipping_method_uuid):
 
     logged_data = {}
     if flask.session.get('logged', False):
-        flask.g.cursor.execute('SELECT * FROM shippingAddresses WHERE userId = %s LIMIT 1', (flask.session.get('user_id', None),))
-        logged_data['main_shipping_address'] = flask.g.cursor.fetchall()[0]
+        flask.g.cursor.execute('SELECT * FROM shippingAddresses WHERE userId = %s', (flask.session.get('user_id', None),))
+        logged_data['shipping_addresses'] = flask.g.cursor.fetchall()
+        print(logged_data)
+        logged_data['main_shipping_address'] = logged_data['shipping_addresses'][0]
+        if shipping_data_uuid != None:
+            for address in logged_data['shipping_addresses']:
+                if address['uuid'] == shipping_data_uuid:
+                    logged_data['main_shipping_address'] = address
+
         flask.g.cursor.execute('SELECT * FROM billingData WHERE userId = %s LIMIT 1', (flask.session.get('user_id', None),))
         logged_data['main_billing_data'] = flask.g.cursor.fetchall()[0]
 

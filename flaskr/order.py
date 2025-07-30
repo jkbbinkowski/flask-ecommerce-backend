@@ -47,7 +47,11 @@ def order(draft_order_uuid, shipping_method_uuid):
     if flask.session.get('logged', False):
         flask.g.cursor.execute('SELECT * FROM shippingAddresses WHERE userId = %s', (flask.session.get('user_id', None),))
         logged_data['shipping_addresses'] = flask.g.cursor.fetchall()
-        logged_data['main_shipping_address'] = logged_data['shipping_addresses'][0]
+        try:
+            logged_data['main_shipping_address'] = logged_data['shipping_addresses'][0]
+        except:
+            logged_data['main_shipping_address'] = {}
+
         if shipping_data_uuid != None:
             for address in logged_data['shipping_addresses']:
                 if address['uuid'] == shipping_data_uuid:

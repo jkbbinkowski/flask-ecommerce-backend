@@ -24,7 +24,7 @@ bp = flask.Blueprint('order', __name__, url_prefix=config['ENDPOINTS']['order'])
 
 @bp.route(f'{config['ENDPOINTS']['to_checkout']}/<draft_order_uuid>/<shipping_method_uuid>', methods=['GET'])
 def order(draft_order_uuid, shipping_method_uuid):
-    shipping_data_uuid = flask.request.args.get('sauuid', None)
+    shipping_data_uuid = flask.request.args.get('ssauuid', None)
 
     flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (draft_order_uuid,))
     draft_order = flask.g.cursor.fetchone()
@@ -47,7 +47,6 @@ def order(draft_order_uuid, shipping_method_uuid):
     if flask.session.get('logged', False):
         flask.g.cursor.execute('SELECT * FROM shippingAddresses WHERE userId = %s', (flask.session.get('user_id', None),))
         logged_data['shipping_addresses'] = flask.g.cursor.fetchall()
-        print(logged_data)
         logged_data['main_shipping_address'] = logged_data['shipping_addresses'][0]
         if shipping_data_uuid != None:
             for address in logged_data['shipping_addresses']:

@@ -125,6 +125,7 @@ def forgot_password():
 
         if not email_sent:
             time.sleep(int(config['ADVANCED']['simulate_forgot_pass_email_send_time']))
+            
         return flaskr.static_cache.SUCCESS_MESSAGES['auth']['forgot-pass-token-generated'], 200
     
 

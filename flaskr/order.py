@@ -67,7 +67,7 @@ def order(draft_order_uuid, shipping_method_uuid):
 def calculate_shipping_cost():
     
     ### SOME LOGIC HERE TO CALCULATE SHIPPING COST LATER ON ###
-    ### BELOW IS EXAMPLE OF RETURNING JSON RESPONSE AND OTHER NECESSARY STUFF ###
+    ### BELOW IS EXAMPLE OF JSON RESPONSE AND OTHER NECESSARY STUFF ###
 
     return_json = {
         'shipping_methods': {

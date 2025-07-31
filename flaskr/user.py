@@ -79,7 +79,7 @@ def billing_data():
         if not 'bill-ctr-code' in data:
             data['bill-ctr-code'] = ''
 
-        if all(value == '' for key, value in data.items() if key not in ['bill-reg-checkbox', 'bill-vat']):
+        if all(value == '' for key, value in data.items() if key not in ['bill-reg-checkbox']):
             bill_type = 'none'
         else:
             if any(value == '' for key, value in data.items() if key not in ['bill-reg-checkbox', 'bill-vat']):

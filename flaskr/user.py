@@ -79,8 +79,11 @@ def billing_data():
         if not 'bill-ctr-code' in data:
             data['bill-ctr-code'] = ''
 
-        if all(value == '' for key, value in data.items() if key != 'bill-reg-checkbox'):
+        if all(value == '' for key, value in data.items() if key not in ['bill-reg-checkbox', 'bill-vat']):
             bill_type = 'none'
+        else:
+            if any(value == '' for key, value in data.items() if key not in ['bill-reg-checkbox', 'bill-vat']):
+                return {'errors': flaskr.static_cache.ERROR_MESSAGES['user']['missing_billing_data']}, 400
 
         flask.g.cursor.execute('UPDATE billingData SET type = %s, name = %s, street = %s, city = %s, postcode = %s, countryCode = %s, country = %s, taxId = %s, email = %s WHERE userId = %s', (bill_type, data['bill-nm'], data['bill-st'], data['bill-ct'], data['bill-pc'], data['bill-ctr-code'], data['bill-ctr'], data['bill-vat'], data['bill-email'], flask.session['user_id']))
         flask.g.conn.commit()

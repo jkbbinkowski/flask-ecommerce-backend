@@ -23,17 +23,20 @@ bp = flask.Blueprint('order', __name__, url_prefix=config['ENDPOINTS']['order'])
 
 
 @bp.route(f'{config['ENDPOINTS']['to_checkout']}/<draft_order_uuid>/<shipping_method_uuid>', methods=['GET'])
-def order(draft_order_uuid, shipping_method_uuid):
+def order_checkout(draft_order_uuid, shipping_method_uuid):
     shipping_data_uuid = flask.request.args.get('ssauuid', None)
 
-    flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (draft_order_uuid,))
-    draft_order = flask.g.cursor.fetchone()
-    if not draft_order:
-        return flask.jsonify({'errors': flaskr.static_cache.ERROR_MESSAGES['order']['error_validating_draft_order']}), 404
-    
-    shipping_method = json.loads(draft_order['shippingMethods'])[shipping_method_uuid]
-    if not shipping_method:
-        return flask.jsonify({'errors': flaskr.static_cache.ERROR_MESSAGES['order']['error_validating_draft_order']}), 404
+    try:
+        flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (draft_order_uuid,))
+        draft_order = flask.g.cursor.fetchone()
+        if not draft_order:
+            return flask.abort(404)
+
+        shipping_method = json.loads(draft_order['shippingMethods'])[shipping_method_uuid]
+        if not shipping_method:
+            return flask.abort(404)
+    except:
+        return flask.abort(404)
     
     order_products = json.loads(draft_order['products'])
 
@@ -61,6 +64,11 @@ def order(draft_order_uuid, shipping_method_uuid):
         logged_data['main_billing_data'] = flask.g.cursor.fetchall()[0]
 
     return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid, logged_data=logged_data)
+
+
+@bp.route(f'{config['ENDPOINTS']['finalize_order']}', methods=['POST'])
+def finalize_order():
+    return 'ok', 200
 
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])

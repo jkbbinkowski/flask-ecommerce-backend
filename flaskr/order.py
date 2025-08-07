@@ -63,11 +63,15 @@ def order_checkout(draft_order_uuid, shipping_method_uuid):
         flask.g.cursor.execute('SELECT * FROM billingData WHERE userId = %s LIMIT 1', (flask.session.get('user_id', None),))
         logged_data['main_billing_data'] = flask.g.cursor.fetchall()[0]
 
+        flask.g.cursor.execute('SELECT * FROM users WHERE id = %s', (flask.session.get('user_id', None),))
+        logged_data['user_data'] = flask.g.cursor.fetchall()[0]
+        
     return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid, logged_data=logged_data)
 
 
 @bp.route(f'{config['ENDPOINTS']['finalize_order']}', methods=['POST'])
 def finalize_order():
+    print(flask.request.data, file=sys.stderr)
     return 'ok', 200
 
 

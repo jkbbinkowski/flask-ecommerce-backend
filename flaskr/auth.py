@@ -73,7 +73,7 @@ def register():
             return {'errors': flaskr.static_cache.ERROR_MESSAGES['auth']['email_already_exists']}, 400
 
         pass_hash = werkzeug.security.generate_password_hash(data['reg-pass'], config['AUTH']['hash_method'])
-        flask.g.cursor.execute('INSERT INTO users (firstName, lastName, email, phone, passHash) VALUES (%s, %s, %s, %s, %s)', (data['reg-fn'], data['reg-ln'], data['reg-email'], data['reg-ph'], pass_hash))
+        flask.g.cursor.execute('INSERT INTO users (uuid, firstName, lastName, email, phone, passHash) VALUES (%s, %s, %s, %s, %s, %s)', (str(uuid.uuid4()), data['reg-fn'], data['reg-ln'], data['reg-email'], data['reg-ph'], pass_hash))
         flask.g.conn.commit()
         user_id = flask.g.cursor.lastrowid
         flask.g.cursor.execute('INSERT INTO billingData (userId) VALUES (%s)', (user_id,))

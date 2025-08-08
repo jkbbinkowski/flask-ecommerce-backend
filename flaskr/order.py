@@ -71,7 +71,14 @@ def order_checkout(draft_order_uuid, shipping_method_uuid):
 
 @bp.route(f'{config['ENDPOINTS']['finalize_order']}', methods=['POST'])
 def finalize_order():
-    print(flask.request.data, file=sys.stderr)
+    rq_data = json.loads(flask.request.data)
+    
+    #get draft order data
+    flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
+    draft_order_data = flask.g.cursor.fetchone()
+
+    
+
     return 'ok', 200
 
 
@@ -139,3 +146,16 @@ def create_draft_order(shipping_methods):
     except Exception as e:
         print(e)
         return False
+    
+
+def validate_finalize_order_data(data):
+    errors = []
+    if (data['ship-first-name'] == '') or (len(data['ship-first-name']) > 45):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_name'])
+    if (data['ship-last-name'] == '') or (len(data['ship-last-name']) > 255):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_last_name'])
+    if (len(data['ship-company-name']) > 255):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_company_name'])
+    
+
+    return errors

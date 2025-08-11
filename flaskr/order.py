@@ -85,7 +85,18 @@ def finalize_order():
     if len(errors) > 0:
         return {'errors': errors}, 400
     
-    print(rq_data)
+    errors = validate_finalize_order_data(rq_data)
+    if len(errors) > 0:
+        return {'errors': errors}, 400
+    
+    if 'uuuid' in rq_data:
+        flask.g.cursor.execute('SELECT * FROM users WHERE uuid = %s', (rq_data['uuuid'],))
+        user_data = flask.g.cursor.fetchone()
+    elif 'checkbox-create-acc' in rq_data and rq_data['checkbox-create-acc'] == True:
+        user_data = order_create_account(rq_data)
+    else:
+        user_data = None
+    
 
     return 'ok', 200
 
@@ -156,6 +167,10 @@ def create_draft_order(shipping_methods):
         return False
     
 
+def order_create_account(data):
+    pass
+    
+
 def validate_finalize_order_shipping_data(data):
     errors = []
     if (data['ship-fn'] == '') or (len(data['ship-fn']) > 45):
@@ -202,7 +217,16 @@ def validate_finalize_order_billing_data(data):
             errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_country'])
         if ('@' not in data['bill-em']) or ('.' not in data['bill-em']):
             errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_email'])
-        if not re.search(r'[0-9]', data['bill-vat']) or (len(data['bill-vat']) > 45):
-            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_tax_number'])
+        if (data['bill-vat']) != '':
+            if not re.search(r'[0-9]', data['bill-vat']) or (len(data['bill-vat']) > 45):
+                errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_tax_number'])
     
+    return errors
+
+
+def validate_finalize_order_data(data):
+    errors = []
+    if data['checkbox-reg'] != True:
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_reg_checkbox'])
+
     return errors

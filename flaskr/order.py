@@ -11,7 +11,7 @@ import json
 import flaskr.functions
 import time
 import uuid
-
+import re
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -77,7 +77,9 @@ def finalize_order():
     flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
     draft_order_data = flask.g.cursor.fetchone()
 
-    
+    errors = validate_finalize_order_data(rq_data)
+    if len(errors) > 0:
+        return {'errors': errors}, 400
 
     return 'ok', 200
 
@@ -150,12 +152,27 @@ def create_draft_order(shipping_methods):
 
 def validate_finalize_order_data(data):
     errors = []
-    if (data['ship-first-name'] == '') or (len(data['ship-first-name']) > 45):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_name'])
-    if (data['ship-last-name'] == '') or (len(data['ship-last-name']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_last_name'])
-    if (len(data['ship-company-name']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['auth']['invalid_company_name'])
-    
+    if (data['ship-fn'] == '') or (len(data['ship-fn']) > 45):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_first_name'])
+    if (data['ship-ln'] == '') or (len(data['ship-ln']) > 255):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_last_name'])
+    if (len(data['ship-cn']) > 255):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_company_name'])
+    if (data['ship-st'] == '') or (len(data['ship-st']) > 255):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_street_name'])
+    if not re.search(r'[0-9]', data['ship-pc']) or (len(data['ship-pc']) > 20):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_postcode'])
+    if (data['ship-ct'] == '') or (len(data['ship-ct']) > 255):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_city_name'])
+    if 'ship-ctr-code' in data:
+        if not re.search(r'[A-Z]', data['ship-ctr-code']):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_country'])
+    else:
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_country'])
+    if not re.search(r'[0-9]', data['ship-ph']) or (len(data['ship-ph']) > 20):
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_phone'])
+    if 'ship-em' in data:
+        if ('@' not in data['ship-em']) or ('.' not in data['ship-em']):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_email'])
 
     return errors

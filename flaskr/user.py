@@ -196,11 +196,11 @@ def change_password():
 def validate_billing_data(data):
     errors = []
     if (len(data['bill-nm']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['billing_name_too_long'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_billing_name'])
     if (len(data['bill-st']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['street_name_too_long'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_street_name'])
     if (len(data['bill-ct']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['city_name_too_long'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_city_name'])
     if (data['bill-pc']) != '':
         if not re.search(r'[0-9]', data['bill-pc']) or (len(data['bill-pc']) > 20):
             errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_postcode'])
@@ -246,11 +246,11 @@ def validate_shipping_data(data):
     if (len(data['ship-cn']) > 255):
         errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_company_name'])
     if (data['ship-st'] == '') or (len(data['ship-st']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['street_name_too_long'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_street_name'])
     if not re.search(r'[0-9]', data['ship-pc']) or (len(data['ship-pc']) > 20):
         errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_postcode'])
     if (data['ship-ct'] == '') or (len(data['ship-ct']) > 255):
-        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['city_name_too_long'])
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_city_name'])
     if 'ship-ctr-code' in data:
         if not re.search(r'[A-Z]', data['ship-ctr-code']):
             errors.append(flaskr.static_cache.ERROR_MESSAGES['user']['invalid_country'])

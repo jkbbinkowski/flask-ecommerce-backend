@@ -21,9 +21,9 @@
     },
     "user": {
         "shipping_address_not_found_or_not_accessible": [""],
-        "billing_name_too_long": [""],
-        "street_name_too_long": [""],
-        "city_name_too_long": [""],
+        "invalid_billing_name": [""],
+        "invalid_street_name": [""],
+        "invalid_city_name": [""],
         "invalid_postcode": [""],
         "invalid_country": [""],
         "invalid_tax_number": [""],
@@ -32,7 +32,8 @@
         "invalid_first_name": [""],
         "invalid_last_name": [""],
         "invalid_company_name": [""],
-        "invalid_phone": [""]
+        "invalid_phone": [""],
+        "missing_billing_data": [""]
     },
     "cart": {
         "product_not_found": [""],
@@ -41,6 +42,14 @@
     },
     "order": {
         "failed_to_calculate_shipping": [""],
-        "error_validating_draft_order": [""]
+        "invalid_first_name": [""],
+        "invalid_last_name": [""],
+        "invalid_company_name": [""],
+        "invalid_street_name": [""],
+        "invalid_postcode": [""],
+        "invalid_country": [""],
+        "invalid_phone": [""],
+        "invalid_email": [""],
+        "invalid_city_name": [""]
     }
 }

@@ -77,9 +77,15 @@ def finalize_order():
     flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
     draft_order_data = flask.g.cursor.fetchone()
 
-    errors = validate_finalize_order_data(rq_data)
+    errors = validate_finalize_order_shipping_data(rq_data)
     if len(errors) > 0:
         return {'errors': errors}, 400
+    
+    errors = validate_finalize_order_billing_data(rq_data)
+    if len(errors) > 0:
+        return {'errors': errors}, 400
+    
+    print(rq_data)
 
     return 'ok', 200
 
@@ -150,7 +156,7 @@ def create_draft_order(shipping_methods):
         return False
     
 
-def validate_finalize_order_data(data):
+def validate_finalize_order_shipping_data(data):
     errors = []
     if (data['ship-fn'] == '') or (len(data['ship-fn']) > 45):
         errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_first_name'])
@@ -175,4 +181,28 @@ def validate_finalize_order_data(data):
         if ('@' not in data['ship-em']) or ('.' not in data['ship-em']):
             errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_email'])
 
+    return errors
+
+
+def validate_finalize_order_billing_data(data):
+    errors = []
+    if ('checkbox-bill' in data) and (data['checkbox-bill'] == True):
+        if (data['bill-nm'] == '') or (len(data['bill-nm']) > 255):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_billing_name'])
+        if (data['bill-st'] == '') or (len(data['bill-st']) > 255):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_street_name'])
+        if (data['bill-ct'] == '') or (len(data['bill-ct']) > 255):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_city_name'])
+        if not re.search(r'[0-9]', data['bill-pc']) or (len(data['bill-pc']) > 20):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_postcode'])
+        if 'bill-ctr-code' in data:
+            if not re.search(r'[A-Z]', data['bill-ctr-code']):
+                errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_country'])
+        else:
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_country'])
+        if ('@' not in data['bill-em']) or ('.' not in data['bill-em']):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_email'])
+        if not re.search(r'[0-9]', data['bill-vat']) or (len(data['bill-vat']) > 45):
+            errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_tax_number'])
+    
     return errors

@@ -50,6 +50,8 @@
         "invalid_country": [""],
         "invalid_phone": [""],
         "invalid_email": [""],
-        "invalid_city_name": [""]
+        "invalid_city_name": [""],
+        "invalid_billing_name": [""],
+        "invalid_tax_number": [""]
     }
 }

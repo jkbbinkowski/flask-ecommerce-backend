@@ -103,8 +103,10 @@ def finalize_order():
     for product in json.loads(draft_order_data['products']):
         total_to_pay += round(((product['priceNet']*(1+(product['vatRate']/100))) * product['amount']), 2)
 
-    order_number = str(int(time.time())) + ''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
-    print(order_number)
+    order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
+    order_uuid = str(uuid.uuid4())
+    timestamp = int(time.time())
+    
     
 
     return 'ok', 200

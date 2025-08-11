@@ -12,6 +12,7 @@ import flaskr.functions
 import time
 import uuid
 import re
+import random
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -97,7 +98,13 @@ def finalize_order():
     else:
         user_data = None
 
-    print(draft_order_data)
+    total_to_pay = 0
+    total_to_pay += json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost']
+    for product in json.loads(draft_order_data['products']):
+        total_to_pay += round(((product['priceNet']*(1+(product['vatRate']/100))) * product['amount']), 2)
+
+    order_number = str(int(time.time())) + ''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
+    print(order_number)
     
 
     return 'ok', 200
@@ -114,13 +121,11 @@ def calculate_shipping_cost():
             str(uuid.uuid4()): {
                 'id': 1,
                 'cost': 100,
-                'currency': 'PLN',
                 'name': 'Name of the method'
             },
             str(uuid.uuid4()): {
                 'id': 2,
                 'cost': 200,
-                'currency': 'PLN',
                 'name': 'Name of the method 2'
             }
         }
@@ -151,7 +156,6 @@ def create_draft_order(shipping_methods):
         flask.g.cursor.execute('SELECT * FROM cartProducts WHERE cartId = %s', (cart_id,))
         cart_products = flask.g.cursor.fetchall()
 
-        sum_products = 0
         for product in cart_products:
             flask.g.cursor.execute('SELECT * from products WHERE id = %s', (product['productId'],))
             product_data = flask.g.cursor.fetchone()

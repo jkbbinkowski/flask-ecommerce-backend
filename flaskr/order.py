@@ -47,6 +47,9 @@ def order_checkout(draft_order_uuid, shipping_method_uuid):
         product_data = flask.g.cursor.fetchone()
         products_data.append(product_data)
 
+    flask.g.cursor.execute('SELECT * FROM paymentMethods')
+    payment_methods = flask.g.cursor.fetchall()
+
     logged_data = {}
     if flask.session.get('logged', False):
         flask.g.cursor.execute('SELECT * FROM shippingAddresses WHERE userId = %s', (flask.session.get('user_id', None),))
@@ -66,9 +69,6 @@ def order_checkout(draft_order_uuid, shipping_method_uuid):
 
         flask.g.cursor.execute('SELECT * FROM users WHERE id = %s', (flask.session.get('user_id', None),))
         logged_data['user_data'] = flask.g.cursor.fetchall()[0]
-
-        flask.g.cursor.execute('SELECT * FROM paymentMethods')
-        payment_methods = flask.g.cursor.fetchall()
         
     return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid, logged_data=logged_data, payment_methods=payment_methods)
 
@@ -104,6 +104,7 @@ def finalize_order():
         user_data = flask.g.cursor.fetchone()
         order_email = user_data['email']
         order_user_id = user_data['id']
+
     elif 'checkbox-create-acc' in rq_data and rq_data['checkbox-create-acc'] == True:
         user_data = order_create_account(rq_data)
         order_email = user_data['email']
@@ -165,6 +166,17 @@ def finalize_order():
     }
     email_data = { 'template': config['EMAIL_PATHS']['new_order'], 'subject': config['EMAIL_SUBJECTS']['new_order'].replace('{order_number}', order_number), 'email': order_email, 'cc': config['TRANSACTIONAL_EMAIL']['cc'], 'order_data': order_data}
     flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(email_data))
+
+    #truncate cart on successfull checkout
+    if flask.session.get('logged'):
+        flask.g.cursor.execute('SELECT id FROM carts WHERE userId = %s', (flask.session['user_id'],))
+        cart_id = flask.g.cursor.fetchone()['id']
+    else:
+        flask.g.cursor.execute('SELECT id FROM carts WHERE uuid = %s', (flask.request.cookies.get(config['COOKIE_NAMES']['cart']),))
+        cart_id = flask.g.cursor.fetchone()['id']
+    flask.g.cursor.execute('UPDATE carts SET lastModTime = %s WHERE id = %s', (int(time.time()), cart_id))
+    flask.g.cursor.execute('DELETE FROM cartProducts WHERE cartId = %s', (cart_id,))
+    flask.g.conn.commit()
 
     resp = {
         'ouuid': order_uuid

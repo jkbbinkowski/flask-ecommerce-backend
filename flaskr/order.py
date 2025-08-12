@@ -92,6 +92,7 @@ def finalize_order():
     if len(errors) > 0:
         return {'errors': errors}, 400
     
+    #check if user is logged in
     if 'uuuid' in rq_data:
         flask.g.cursor.execute('SELECT * FROM users WHERE uuid = %s', (rq_data['uuuid'],))
         user_data = flask.g.cursor.fetchone()
@@ -105,24 +106,31 @@ def finalize_order():
         order_email = rq_data['ship-em']
         order_user_id = None
 
+    #calculate total to pay
     total_to_pay = 0
     total_to_pay += json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost']
     for product in json.loads(draft_order_data['products']):
         total_to_pay += round(((product['priceNet']*(1+(product['vatRate']/100))) * product['amount']), 2)
 
+    #create order number and uuid
     order_number = create_and_validate_order_number()
     order_uuid = str(uuid.uuid4())
     timestamp = int(time.time())
     
+    #insert order to database
     flask.g.cursor.execute('''
                             INSERT INTO orders 
                             (timestamp, email, userId, uuid, orderNumber, orderStatus, products, shippingMethod, paymentMethod, totalToPay, currency, shippingFirstName, shippingLastName, shippingCompanyName, shippingPhone, shippingStreet, shippingPostcode, shippingCity, shippingCountryCode, shippingCountry, additionalInfo)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             ''', 
                             (timestamp, order_email, order_user_id, order_uuid, order_number, config['ORDERS']['new_order_status'], draft_order_data['products'], json.dumps(json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]), rq_data['order-pm'], total_to_pay, config['GLOBAL']['currency'], rq_data['ship-fn'], rq_data['ship-ln'], rq_data['ship-cn'], rq_data['ship-ph'], rq_data['ship-st'], rq_data['ship-pc'], rq_data['ship-ct'], rq_data['ship-ctr-code'], rq_data['ship-ctr'], rq_data['order-ai']))
+    flask.g.conn.commit()                       
+    order_db_id = flask.g.cursor.lastrowid
+
+    #delete draft order from db
+    flask.g.cursor.execute('DELETE FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
     flask.g.conn.commit()
-                            
-    
+
 
     return 'ok', 200
 

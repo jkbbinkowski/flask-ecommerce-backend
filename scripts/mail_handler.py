@@ -34,13 +34,14 @@ if __name__ == '__main__':
         r.close()
 
 
-# Example of necessary data for transactional email
+# Example of data for transactional emails
 # {
 #     'template': config['EMAIL_PATHS']['new_pass'],  # path to template file
 #     'subject': config['EMAIL_SUBJECTS']['new_pass'],  # subject of email
 #     'email': user_data['email'],  # recipient email
 #     'cc': [] # optional, list of emails to cc
 # }
-# also can parse another that thats used by jinja2 during template rendering
+
+# # # Also you can parse another data that thats used by jinja2 during template rendering (template specific)
     
         

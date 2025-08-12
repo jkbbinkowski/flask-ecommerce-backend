@@ -74,6 +74,8 @@ def order_checkout(draft_order_uuid, shipping_method_uuid):
 def finalize_order():
     rq_data = json.loads(flask.request.data)
     
+    print(rq_data, file=sys.stderr)
+
     #get draft order data
     flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
     draft_order_data = flask.g.cursor.fetchone()
@@ -93,20 +95,33 @@ def finalize_order():
     if 'uuuid' in rq_data:
         flask.g.cursor.execute('SELECT * FROM users WHERE uuid = %s', (rq_data['uuuid'],))
         user_data = flask.g.cursor.fetchone()
+        order_email = user_data['email']
+        order_user_id = user_data['id']
     elif 'checkbox-create-acc' in rq_data and rq_data['checkbox-create-acc'] == True:
         user_data = order_create_account(rq_data)
+        order_email = user_data['email']
+        order_user_id = user_data['id']
     else:
-        user_data = None
+        order_email = rq_data['ship-em']
+        order_user_id = None
 
     total_to_pay = 0
     total_to_pay += json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost']
     for product in json.loads(draft_order_data['products']):
         total_to_pay += round(((product['priceNet']*(1+(product['vatRate']/100))) * product['amount']), 2)
 
-    order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
+    order_number = create_and_validate_order_number()
     order_uuid = str(uuid.uuid4())
     timestamp = int(time.time())
     
+    flask.g.cursor.execute('''
+                            INSERT INTO orders 
+                            (timestamp, email, userId, uuid, orderNumber, orderStatus, products, shippingMethod, paymentMethod, totalToPay, currency, shippingFirstName, shippingLastName, shippingCompanyName, shippingPhone, shippingStreet, shippingPostcode, shippingCity, shippingCountryCode, shippingCountry, additionalInfo)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ''', 
+                            (timestamp, order_email, order_user_id, order_uuid, order_number, config['ORDERS']['new_order_status'], draft_order_data['products'], json.dumps(json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]), rq_data['order-pm'], total_to_pay, config['GLOBAL']['currency'], rq_data['ship-fn'], rq_data['ship-ln'], rq_data['ship-cn'], rq_data['ship-ph'], rq_data['ship-st'], rq_data['ship-pc'], rq_data['ship-ct'], rq_data['ship-ctr-code'], rq_data['ship-ctr'], rq_data['order-ai']))
+    flask.g.conn.commit()
+                            
     
 
     return 'ok', 200
@@ -176,7 +191,17 @@ def create_draft_order(shipping_methods):
 
 def order_create_account(data):
     pass
+
+
+def create_and_validate_order_number():
+    order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
+    flask.g.cursor.execute('SELECT orderNumber FROM orders WHERE orderNumber = %s', (order_number,))
+    while len(flask.g.cursor.fetchall()) > 0:
+        order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
+        flask.g.cursor.execute('SELECT orderNumber FROM orders WHERE orderNumber = %s', (order_number,))
     
+    return order_number
+
 
 def validate_finalize_order_shipping_data(data):
     errors = []
@@ -235,5 +260,7 @@ def validate_finalize_order_data(data):
     errors = []
     if data['checkbox-reg'] != True:
         errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_reg_checkbox'])
+    if len(data['order-ai']) > 1000:
+        errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['too_long_additional_info'])
 
     return errors

@@ -66,15 +66,16 @@ def order_checkout(draft_order_uuid, shipping_method_uuid):
 
         flask.g.cursor.execute('SELECT * FROM users WHERE id = %s', (flask.session.get('user_id', None),))
         logged_data['user_data'] = flask.g.cursor.fetchall()[0]
+
+        flask.g.cursor.execute('SELECT * FROM paymentMethods')
+        payment_methods = flask.g.cursor.fetchall()
         
-    return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid, logged_data=logged_data)
+    return flask.render_template('order/checkout.html', order_products=order_products, products_data=products_data, shipping_method=shipping_method, draft_order_uuid=draft_order_uuid, shipping_method_uuid=shipping_method_uuid, logged_data=logged_data, payment_methods=payment_methods)
 
 
 @bp.route(f'{config['ENDPOINTS']['finalize_order']}', methods=['POST'])
 def finalize_order():
     rq_data = json.loads(flask.request.data)
-    
-    print(rq_data, file=sys.stderr)
 
     #get draft order data
     flask.g.cursor.execute('SELECT * FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
@@ -91,6 +92,11 @@ def finalize_order():
     errors = validate_finalize_order_data(rq_data)
     if len(errors) > 0:
         return {'errors': errors}, 400
+    
+    flask.g.cursor.execute('SELECT * FROM paymentMethods WHERE uuid = %s', (rq_data['order-pm'],))
+    payment_method = flask.g.cursor.fetchone()
+    if not payment_method:
+        raise RuntimeError("Invalid payment method uuid")
     
     #check if user is logged in
     if 'uuuid' in rq_data:
@@ -270,5 +276,6 @@ def validate_finalize_order_data(data):
         errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['invalid_reg_checkbox'])
     if len(data['order-ai']) > 1000:
         errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['too_long_additional_info'])
+    
 
     return errors

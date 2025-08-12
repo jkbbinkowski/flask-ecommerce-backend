@@ -154,7 +154,11 @@ def finalize_order():
                                (order_db_id, False, f'{rq_data['ship-fn']} {rq_data['ship-ln']}', rq_data['ship-st'], rq_data['ship-pc'], rq_data['ship-ct'], rq_data['ship-ctr-code'], rq_data['ship-ctr'], order_email))
     flask.g.conn.commit()
 
-    return 'ok', 200
+    resp = {
+        'ouuid': order_uuid
+    }
+
+    return flask.jsonify(resp), 201
 
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])

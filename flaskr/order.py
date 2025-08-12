@@ -154,6 +154,18 @@ def finalize_order():
                                (order_db_id, False, f'{rq_data['ship-fn']} {rq_data['ship-ln']}', rq_data['ship-st'], rq_data['ship-pc'], rq_data['ship-ct'], rq_data['ship-ctr-code'], rq_data['ship-ctr'], order_email))
     flask.g.conn.commit()
 
+    #add transational email to queue
+    order_data = {
+        'order_number': order_number,
+        'order_uuid': order_uuid,
+        'order_products': json.loads(draft_order_data['products']),
+        'order_total': total_to_pay,
+        'rq_data': rq_data,
+        'order_status': config['ORDERS']['new_order_status']
+    }
+    email_data = { 'template': config['EMAIL_PATHS']['new_order'], 'subject': config['EMAIL_SUBJECTS']['new_order'].replace('{order_number}', order_number), 'email': order_email, 'cc': config['TRANSACTIONAL_EMAIL']['cc'], 'order_data': order_data}
+    flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(email_data))
+
     resp = {
         'ouuid': order_uuid
     }

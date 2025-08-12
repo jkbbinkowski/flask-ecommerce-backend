@@ -137,6 +137,22 @@ def finalize_order():
     flask.g.cursor.execute('DELETE FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
     flask.g.conn.commit()
 
+    #add invoice data
+    if ('checkbox-bill' in rq_data) and (rq_data['checkbox-bill'] == True):
+        flask.g.cursor.execute('''
+                               INSERT INTO orderInvoices 
+                               (orderId, invoiceNeeded, name, street, postcode, city, countryCode, country, email, taxId)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                               ''',
+                               (order_db_id, True, rq_data['bill-nm'], rq_data['bill-st'], rq_data['bill-pc'], rq_data['bill-ct'], rq_data['bill-ctr-code'], rq_data['bill-ctr'], rq_data['bill-em'], rq_data['bill-vat']))
+    else:
+        flask.g.cursor.execute('''
+                               INSERT INTO orderInvoices 
+                               (orderId, invoiceNeeded, name, street, postcode, city, countryCode, country, email)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                               ''',
+                               (order_db_id, False, f'{rq_data['ship-fn']} {rq_data['ship-ln']}', rq_data['ship-st'], rq_data['ship-pc'], rq_data['ship-ct'], rq_data['ship-ctr-code'], rq_data['ship-ctr'], order_email))
+    flask.g.conn.commit()
 
     return 'ok', 200
 

@@ -121,7 +121,8 @@ def finalize_order():
     total_to_pay = 0
     total_to_pay += json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost']
     for product in json.loads(draft_order_data['products']):
-        total_to_pay += round(((product['priceNet']*(1+(product['vatRate']/100))) * product['amount']), 2)
+        total_to_pay += ((product['priceNet']*(1+(product['vatRate']/100))) * product['amount'])
+    total_to_pay = round(total_to_pay, 2)
 
     #create order number and uuid
     order_number = create_and_validate_order_number()
@@ -164,13 +165,14 @@ def finalize_order():
         'order_number': order_number,
         'order_uuid': order_uuid,
         'order_products': json.loads(draft_order_data['products']),
-        'order_total': total_to_pay,
         'rq_data': rq_data,
         'order_status': config['ORDERS']['new_order_status'],
         'payment_method_name': payment_method_name,
         'shipping_method_name': json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['name'],
+        'shipping_method_cost': json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost'],
         'order_date': datetime.datetime.fromtimestamp(timestamp).strftime('%d.%m.%Y %H:%M'),
-        'products': json.loads(draft_order_data['products'])
+        'products': json.loads(draft_order_data['products']),
+        'total_to_pay': str(total_to_pay)
     }
     email_data = { 'template': config['EMAIL_PATHS']['new_order'], 'subject': config['EMAIL_SUBJECTS']['new_order'].replace('{order_number}', order_number), 'email': order_email, 'bcc': config['TRANSACTIONAL_EMAIL']['bcc'], 'order_data': order_data}
     flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(email_data))
@@ -203,13 +205,18 @@ def calculate_shipping_cost():
         'shipping_methods': {
             str(uuid.uuid4()): {
                 'id': 1,
-                'cost': 100,
-                'name': 'Name of the method'
+                'cost': 4.92,
+                'name': 'Shipping 1'
             },
             str(uuid.uuid4()): {
                 'id': 2,
-                'cost': 200,
-                'name': 'Name of the method 2'
+                'cost': 19,
+                'name': 'Shipping 2'
+            },
+            str(uuid.uuid4()): {
+                'id': 3,
+                'cost': 24.99,
+                'name': 'Shipping 3'
             }
         }
     }
@@ -242,7 +249,7 @@ def create_draft_order(shipping_methods):
         for product in cart_products:
             flask.g.cursor.execute('SELECT * from products WHERE id = %s', (product['productId'],))
             product_data = flask.g.cursor.fetchone()
-            product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate'], 'name': product_data['name']})
+            product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate'], 'name': product_data['name'], 'productId': product_data['id']})
 
         draft_order_uuid = str(uuid.uuid4())
         flask.g.cursor.execute('INSERT INTO draftOrders (cartId, uuid, products, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s)', (cart_id, draft_order_uuid, json.dumps(cart_products), json.dumps(shipping_methods), int(time.time())))

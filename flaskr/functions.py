@@ -20,6 +20,7 @@ import uuid
 import time
 import traceback
 import hashlib
+import flaskr.jinja_filters
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -62,6 +63,7 @@ def send_transactional_email(data):
         em['Bcc'] = ', '.join(bcc)
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('/'))
+    env.filters['slugify'] = flaskr.jinja_filters.slugify
     template = env.get_template(f"{working_dir}{data['template']}")
     rendered_html = template.render(config=config, data=data, working_dir=working_dir)
     em.attach(MIMEText(rendered_html, 'html'))

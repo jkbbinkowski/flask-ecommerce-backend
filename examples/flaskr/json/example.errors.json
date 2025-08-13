@@ -52,6 +52,9 @@
         "invalid_email": [""],
         "invalid_city_name": [""],
         "invalid_billing_name": [""],
-        "invalid_tax_number": [""]
+        "invalid_tax_number": [""],
+        "invalid_reg_checkbox": [""],
+        "too_long_additional_info": [""],
+        "account_already_exists": [""]
     }
 }

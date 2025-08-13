@@ -167,7 +167,7 @@ def finalize_order():
         'rq_data': rq_data,
         'order_status': config['ORDERS']['new_order_status']
     }
-    email_data = { 'template': config['EMAIL_PATHS']['new_order'], 'subject': config['EMAIL_SUBJECTS']['new_order'].replace('{order_number}', order_number), 'email': order_email, 'cc': config['TRANSACTIONAL_EMAIL']['cc'], 'order_data': order_data}
+    email_data = { 'template': config['EMAIL_PATHS']['new_order'], 'subject': config['EMAIL_SUBJECTS']['new_order'].replace('{order_number}', order_number), 'email': order_email, 'bcc': config['TRANSACTIONAL_EMAIL']['bcc'], 'order_data': order_data}
     flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(email_data))
 
     #truncate cart on successfull checkout
@@ -268,7 +268,7 @@ def order_create_account(data):
     flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (None, user_id, int(time.time())))
     flask.g.conn.commit()
 
-    queue_data = {'template': config['EMAIL_PATHS']['order_new_account'], 'subject': config['EMAIL_SUBJECTS']['register'], 'email': data['ship-em'], 'name': data['ship-fn'], 'pass': random_pass, 'cc': config['TRANSACTIONAL_EMAIL']['cc']}
+    queue_data = {'template': config['EMAIL_PATHS']['order_new_account'], 'subject': config['EMAIL_SUBJECTS']['register'], 'email': data['ship-em'], 'name': data['ship-fn'], 'pass': random_pass, 'bcc': config['TRANSACTIONAL_EMAIL']['bcc']}
     flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))
 
     return [data['ship-em'], user_id]

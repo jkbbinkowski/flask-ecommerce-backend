@@ -42,6 +42,7 @@ def send_transactional_email(data):
     p = os.getenv('TRANSACTIONAL_EMAIL_PASSWORD')
     receiver = data['email']
     cc = data.get('cc', [])
+    bcc = data.get('bcc', [])
 
     em = MIMEMultipart()
     em['From'] = config['TRANSACTIONAL_EMAIL']['from']
@@ -55,6 +56,10 @@ def send_transactional_email(data):
     if cc:
         cc = ast.literal_eval(cc)
         em['Cc'] = ', '.join(cc)
+
+    if bcc:
+        bcc = ast.literal_eval(bcc)
+        em['Bcc'] = ', '.join(bcc)
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('/'))
     template = env.get_template(f"{working_dir}{data['template']}")

@@ -13,6 +13,8 @@ import time
 import uuid
 import re
 import random
+import string
+import werkzeug
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -104,11 +106,12 @@ def finalize_order():
         user_data = flask.g.cursor.fetchone()
         order_email = user_data['email']
         order_user_id = user_data['id']
-
-    elif 'checkbox-create-acc' in rq_data and rq_data['checkbox-create-acc'] == True:
+    elif ('checkbox-create-acc' in rq_data) and (rq_data['checkbox-create-acc'] == True):
         user_data = order_create_account(rq_data)
-        order_email = user_data['email']
-        order_user_id = user_data['id']
+        if not user_data:
+            return {'errors': flaskr.static_cache.ERROR_MESSAGES['order']['account_already_exists']}, 400
+        order_email = user_data[0]
+        order_user_id = user_data[1]
     else:
         order_email = rq_data['ship-em']
         order_user_id = None
@@ -248,11 +251,31 @@ def create_draft_order(shipping_methods):
     
 
 def order_create_account(data):
-    pass
+    flask.g.cursor.execute('SELECT email FROM users WHERE email = %s', (data['ship-em'],))
+    emails = flask.g.cursor.fetchall()
+
+    if len(emails) != 0:
+        return False
+    
+    random_pass = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(int(config['AUTH']['order_auto_pass_length'])))
+    pass_hash = werkzeug.security.generate_password_hash(random_pass, config['AUTH']['hash_method'])
+
+    flask.g.cursor.execute('INSERT INTO users (uuid, firstName, lastName, email, phone, passHash) VALUES (%s, %s, %s, %s, %s, %s)', (str(uuid.uuid4()), data['ship-fn'], data['ship-ln'], data['ship-em'], data['ship-ph'], pass_hash))
+    flask.g.conn.commit()
+    user_id = flask.g.cursor.lastrowid
+    flask.g.cursor.execute('INSERT INTO billingData (userId) VALUES (%s)', (user_id,))
+    flask.g.conn.commit()
+    flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (None, user_id, int(time.time())))
+    flask.g.conn.commit()
+
+    queue_data = {'template': config['EMAIL_PATHS']['order_new_account'], 'subject': config['EMAIL_SUBJECTS']['register'], 'email': data['ship-em'], 'name': data['ship-fn'], 'pass': random_pass, 'cc': config['TRANSACTIONAL_EMAIL']['cc']}
+    flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))
+
+    return [data['ship-em'], user_id]
 
 
 def create_and_validate_order_number():
-    order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])
+    order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(int(config['ORDERS']['chars_in_order_number']))])
     flask.g.cursor.execute('SELECT orderNumber FROM orders WHERE orderNumber = %s', (order_number,))
     while len(flask.g.cursor.fetchall()) > 0:
         order_number = str(int(time.time()))+''.join([chr(65 + random.randint(0, 25)) for _ in range(3)])

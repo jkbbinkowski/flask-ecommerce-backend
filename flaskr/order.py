@@ -15,6 +15,7 @@ import re
 import random
 import string
 import werkzeug
+import datetime
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -96,8 +97,8 @@ def finalize_order():
         return {'errors': errors}, 400
     
     flask.g.cursor.execute('SELECT * FROM paymentMethods WHERE uuid = %s', (rq_data['order-pm'],))
-    payment_method = flask.g.cursor.fetchone()
-    if not payment_method:
+    payment_method_name = flask.g.cursor.fetchone()['name']
+    if not payment_method_name:
         raise RuntimeError("Invalid payment method uuid")
     
     #check if user is logged in
@@ -165,7 +166,11 @@ def finalize_order():
         'order_products': json.loads(draft_order_data['products']),
         'order_total': total_to_pay,
         'rq_data': rq_data,
-        'order_status': config['ORDERS']['new_order_status']
+        'order_status': config['ORDERS']['new_order_status'],
+        'payment_method_name': payment_method_name,
+        'shipping_method_name': json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['name'],
+        'order_date': datetime.datetime.fromtimestamp(timestamp).strftime('%d.%m.%Y %H:%M'),
+        'products': json.loads(draft_order_data['products'])
     }
     email_data = { 'template': config['EMAIL_PATHS']['new_order'], 'subject': config['EMAIL_SUBJECTS']['new_order'].replace('{order_number}', order_number), 'email': order_email, 'bcc': config['TRANSACTIONAL_EMAIL']['bcc'], 'order_data': order_data}
     flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(email_data))
@@ -237,7 +242,7 @@ def create_draft_order(shipping_methods):
         for product in cart_products:
             flask.g.cursor.execute('SELECT * from products WHERE id = %s', (product['productId'],))
             product_data = flask.g.cursor.fetchone()
-            product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate']})
+            product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate'], 'name': product_data['name']})
 
         draft_order_uuid = str(uuid.uuid4())
         flask.g.cursor.execute('INSERT INTO draftOrders (cartId, uuid, products, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s)', (cart_id, draft_order_uuid, json.dumps(cart_products), json.dumps(shipping_methods), int(time.time())))

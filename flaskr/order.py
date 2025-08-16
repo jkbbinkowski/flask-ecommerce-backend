@@ -229,6 +229,30 @@ def calculate_shipping_cost():
     return flask.jsonify(return_json)
 
 
+@bp.route(f'{config['ENDPOINTS']['details']}/<order_uuid>', methods=['GET'])
+def order_details(order_uuid):
+    flask.g.cursor.execute('SELECT * FROM orders WHERE uuid = %s', (order_uuid,))
+    order = flask.g.cursor.fetchone()
+    if not order:
+        return flask.abort(404)
+    
+    flask.g.cursor.execute('SELECT * FROM orderInvoices WHERE orderId = %s', (order['id'],))
+    order_invoice = flask.g.cursor.fetchone()
+
+    flask.g.cursor.execute('SELECT * FROM paymentMethods WHERE uuid = %s', (order['paymentMethod'],))
+    order['orderPaymentMethod'] = flask.g.cursor.fetchone()['name']
+
+    order['products'] = json.loads(order['products'])
+    for product in order['products']:
+        flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (product['productId'],))
+        product_data = flask.g.cursor.fetchone()
+        product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate'], 'name': product_data['name'], 'productId': product_data['id'], 'productEan': product_data['ean']})
+
+    order['orderDate'] = datetime.datetime.fromtimestamp(order['timestamp']).strftime('%d.%m.%Y %H:%M')
+
+    return flask.render_template('order/details.html', order=order, order_invoice=order_invoice)
+
+
 def create_draft_order(shipping_methods):
     try:
         if flask.session.get('logged'):

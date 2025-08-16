@@ -53,6 +53,7 @@ compress = flask_compress.Compress(app)
 
 # jinja custom filters
 app.jinja_env.filters['slugify'] = flaskr.jinja_filters.slugify
+app.jinja_env.filters['jsonify'] = flaskr.jinja_filters.jsonify
 
 
 # app config

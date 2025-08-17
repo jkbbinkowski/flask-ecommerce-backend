@@ -61,6 +61,7 @@ Remove "example." header from the file.<br>
 | USER_PREF_COOKIE | User preferences for the store such as visibility per page, sorting options. |
 | COOKIE_NAMES | Names of the cookie files used by the application. |
 | ADVANCED | Advanced settings, which are not advised to be changed, related directly to logic behind some methods. They are self explanatory. | 
+| ORDERS | Configuration related directly to orders. They are self explanatory. | 
 
 ### .env
 This file contains all the sensitive configuration.<br>

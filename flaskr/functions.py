@@ -67,7 +67,7 @@ def send_transactional_email(data):
     template = env.get_template(f"{working_dir}{data['template']}")
     rendered_html = template.render(config=config, data=data, working_dir=working_dir)
     em.attach(MIMEText(rendered_html, 'html'))
-    recipients = [receiver] + cc
+    recipients = [receiver] + cc + bcc
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(os.getenv('TRANSACTIONAL_EMAIL_SERVER'), os.getenv('TRANSACTIONAL_EMAIL_PORT'), context=context) as smtp:
         smtp.login(sender, p)

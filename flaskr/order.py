@@ -250,7 +250,16 @@ def order_details(order_uuid):
 
     order['orderDate'] = datetime.datetime.fromtimestamp(order['timestamp']).strftime('%d.%m.%Y %H:%M')
 
-    return flask.render_template('order/details.html', order=order, order_invoice=order_invoice)
+    flask.g.cursor.execute('SELECT * FROM trackingNumbers WHERE orderId = %s', (order['id'],))
+    tracking_numbers = flask.g.cursor.fetchall()
+
+    for tracking_number in tracking_numbers:
+        flask.g.cursor.execute('SELECT * FROM carriers WHERE id = %s', (tracking_number['carrierId'],))
+        carrier = flask.g.cursor.fetchone()
+        tracking_number['carrierName'] = carrier['name']
+        tracking_number['trackingLink'] = carrier['trackingLink'].replace('XXXXXX', tracking_number['trackingNumber'])
+
+    return flask.render_template('order/details.html', order=order, order_invoice=order_invoice, tracking_numbers=tracking_numbers)
 
 
 def create_draft_order(shipping_methods):

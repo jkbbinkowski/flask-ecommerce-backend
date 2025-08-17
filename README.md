@@ -58,8 +58,9 @@ Remove "example." header from the file.<br>
 | EMAIL_SUBJECTS | Subjects of emails, used for transactional emails. | 
 | TRANSACTIONAL_EMAIL | Non-sensitive configuration for transactional emails. | 
 | STATIC_PDF | Names of files located in /flaskr/static/pdf. They are meant to be used by Jinja2 while rendering the templates. None of them is used by the backend itself. |
-| PRODUCTS | Configuration for store such as visibility per page, sorting options. |
+| USER_PREF_COOKIE | User preferences for the store such as visibility per page, sorting options. |
 | COOKIE_NAMES | Names of the cookie files used by the application. |
+| ADVANCED | Advanced settings, which are not advised to be changed, related directly to logic behind some methods. They are self explanatory. | 
 
 ### .env
 This file contains all the sensitive configuration.<br>

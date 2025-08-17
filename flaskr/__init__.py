@@ -9,11 +9,13 @@ import flask_compress
 import flask_assets
 import flask_wtf
 from datetime import datetime
+import traceback
 import dotenv
 import configparser
 import redis
 import flaskr.functions
 import flaskr.jinja_filters
+import flaskr.static_cache
 
 
 dotenv.load_dotenv()
@@ -39,6 +41,10 @@ js_auth = flask_assets.Bundle('js/auth.js', output='min/apacked.js', filters='js
 assets.register('js_auth', js_auth)
 js_user = flask_assets.Bundle('js/user.js', output='min/upacked.js', filters='jsmin')
 assets.register('js_user', js_user)
+js_shop = flask_assets.Bundle('js/shop.js', output='min/spacked.js', filters='jsmin')
+assets.register('js_shop', js_shop)
+js_order = flask_assets.Bundle('js/order.js', output='min/opacked.js', filters='jsmin')
+assets.register('js_order', js_order)
 
 
 # configure gzip 
@@ -47,6 +53,7 @@ compress = flask_compress.Compress(app)
 
 # jinja custom filters
 app.jinja_env.filters['slugify'] = flaskr.jinja_filters.slugify
+app.jinja_env.filters['jsonify'] = flaskr.jinja_filters.jsonify
 
 
 # app config
@@ -55,8 +62,10 @@ app.config['TESTING'] = int(config['APP']['testing'])
 app.config['DEBUG'] = int(config['APP']['debug'])
 app.config['FLASK_ENV'] = config['APP']['environment']
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+app.config['SESSION_COOKIE_NAME'] = config['COOKIE_NAMES']['session']
 app.jinja_env.auto_reload = int(config['APP']['templates_auto_reload'])
-if int(config['APP']['set_cookie_settings']) == 1:
+if int(config['APP']['set_session_cookie_settings']) == 1:
+    app.config['SESSION_COOKIE_NAME'] = config['COOKIE_NAMES']['session']
     app.config['SESSION_COOKIE_SECURE'] = int(config['APP']['session_cookie_secure'])
     app.config['SESSION_COOKIE_SAMESITE'] = config['APP']['session_cookie_samesite']
     app.config['SESSION_COOKIE_HTTPONLY'] = int(config['APP']['session_cookie_httponly'])
@@ -75,50 +84,43 @@ from . import blog
 app.register_blueprint(blog.bp)
 from . import shop
 app.register_blueprint(shop.bp)
+from . import cart
+app.register_blueprint(cart.bp)
+from . import order
+app.register_blueprint(order.bp)
 
 
 # load static data
-CACHED_CATEGORIES = []
-CACHED_ERROR_MESSAGES = {}
-CACHED_SUCCESS_MESSAGES = {}
-CACHED_PRODUCTS_VISIBILITY_PER_PAGE = []
-CACHED_PRODUCTS_SORTING_OPTION_NAMES = []
-CACHED_PRODUCTS_SORTING_OPTION_VALUES = []
 with app.app_context():
     conn = flaskr.functions.connect_db()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM categories")
-    CACHED_CATEGORIES = flaskr.functions.build_category_tree(cursor.fetchall())
+    flaskr.static_cache.CATEGORIES = flaskr.functions.build_category_tree(cursor.fetchall())
     with open(f'{working_dir}flaskr/json/errors.json', 'r') as f:
-        CACHED_ERROR_MESSAGES = json.load(f)
+        flaskr.static_cache.ERROR_MESSAGES = json.load(f)
     with open(f'{working_dir}flaskr/json/successes.json', 'r') as f:
-        CACHED_SUCCESS_MESSAGES = json.load(f)
-    CACHED_PRODUCTS_VISIBILITY_PER_PAGE = [int(x.strip()) for x in config['PRODUCTS']['visibility_per_page_options'].split(',')]
-    CACHED_PRODUCTS_SORTING_OPTION_NAMES = [x.strip() for x in config['PRODUCTS']['sorting_option_names'].split(',')]
-    CACHED_PRODUCTS_SORTING_OPTION_VALUES = [x.strip() for x in config['PRODUCTS']['sorting_option_values'].split(',')]
+        flaskr.static_cache.SUCCESS_MESSAGES = json.load(f)
     cursor.close()
     conn.close()
 
 
 @app.before_request
-def open_sql_before_request():
+def before_rq():
+    if flask.request.host != config['APP']['server_name']:
+        flask.abort(404)
     try:
         flask.g.conn = flaskr.functions.connect_db()
         flask.g.cursor = flask.g.conn.cursor(dictionary=True)
         flask.g.redis_client = redis.Redis(host=config['REDIS']['host'], port=config['REDIS']['port'], db=config['REDIS']['db'])
-        flask.g.errors = CACHED_ERROR_MESSAGES
-        flask.g.successes = CACHED_SUCCESS_MESSAGES
-        flask.g.products_visibility_per_page = CACHED_PRODUCTS_VISIBILITY_PER_PAGE
-        flask.g.sorting_option_names = CACHED_PRODUCTS_SORTING_OPTION_NAMES
-        flask.g.sorting_option_values = CACHED_PRODUCTS_SORTING_OPTION_VALUES
+        flaskr.functions.get_cart_products()
     except Exception as e:
-        print(e)
+        pass
 
 
-@app.before_request
-def check_host():
-    if flask.request.host != config['APP']['server_name']:
-        flask.abort(404)
+@app.after_request
+def after_rq(response):
+    flaskr.functions.init_cart(response)
+    return response
 
 
 @app.teardown_request
@@ -136,10 +138,10 @@ def inject_company_data():
     user = {
         'is_logged': flask.session.get('logged', False),
         'id': flask.session.get('user_id', None),
-        'name': flask.session.get('name', None)
+        'name': flask.session.get('name', None),
     }
     referrer = flask.request.referrer
-    return dict(config=config, current_year=datetime.now().year, user=user, categories=CACHED_CATEGORIES, referrer=referrer)
+    return dict(config=config, current_year=datetime.now().year, user=user, categories=flaskr.static_cache.CATEGORIES, referrer=referrer)
 
 
 @app.errorhandler(404)

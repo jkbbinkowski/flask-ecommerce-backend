@@ -235,3 +235,10 @@ def get_config_list(type, config_list):
         return [int(x.strip()) for x in config_list.split(',')]
     elif type == 'str':
         return [x.strip() for x in config_list.split(',')]
+    
+
+def init_new_user(user_id):
+    flask.g.cursor.execute('INSERT INTO billingData (userId) VALUES (%s)', (user_id,))
+    flask.g.conn.commit()
+    flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (None, user_id, int(time.time())))
+    flask.g.conn.commit()

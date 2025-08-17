@@ -308,10 +308,7 @@ def order_create_account(data):
     flask.g.cursor.execute('INSERT INTO users (uuid, firstName, lastName, email, phone, passHash) VALUES (%s, %s, %s, %s, %s, %s)', (str(uuid.uuid4()), data['ship-fn'], data['ship-ln'], data['ship-em'], data['ship-ph'], pass_hash))
     flask.g.conn.commit()
     user_id = flask.g.cursor.lastrowid
-    flask.g.cursor.execute('INSERT INTO billingData (userId) VALUES (%s)', (user_id,))
-    flask.g.conn.commit()
-    flask.g.cursor.execute('INSERT INTO carts (uuid, userId, lastModTime) VALUES (%s, %s, %s)', (None, user_id, int(time.time())))
-    flask.g.conn.commit()
+    flaskr.functions.init_new_user(user_id)
 
     queue_data = {'template': config['EMAIL_PATHS']['order_new_account'], 'subject': config['EMAIL_SUBJECTS']['register'], 'email': data['ship-em'], 'name': data['ship-fn'], 'pass': random_pass, 'bcc': config['TRANSACTIONAL_EMAIL']['bcc']}
     flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))

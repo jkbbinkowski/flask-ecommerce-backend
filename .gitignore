@@ -2,9 +2,9 @@
 **/logs/
 **/.DS_Store
 **/.webassets-cache/
-flaskr/static/
-flaskr/templates/
-flaskr/json/
+flaskr/json
+flaskr/static
+flaskr/templates
 .venv/
 .env
 config.ini

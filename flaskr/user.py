@@ -210,7 +210,7 @@ def user_orders_list():
     flask.g.cursor.execute(f'SELECT * FROM orders WHERE userId = %s OR email = %s ORDER BY timestamp DESC LIMIT {int(config["ORDERS"]["order_list_visibility_per_page"])} OFFSET {offset}', (flask.session['user_id'], flask.session['email']))
     orders = flask.g.cursor.fetchall()
 
-    return flask.render_template('user/orders/orders_list.html', orders=orders, current_page=page, total_pages=total_pages)
+    return flask.render_template('user/orders/orders_list.html', orders=orders, current_page=page, total_pages=total_pages, current_path=flask.request.path)
 
 
 def validate_billing_data(data):

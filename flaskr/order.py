@@ -270,6 +270,25 @@ def order_details(order_uuid):
     return flask.render_template('order/details.html', order=order, order_invoice=order_invoice, tracking_numbers=tracking_numbers)
 
 
+@bp.route(f'{config['ENDPOINTS']['validate_order_data']}', methods=['POST'])
+def validate_order_data():
+    rq_data = json.loads(flask.request.data)
+
+    errors = validate_finalize_order_shipping_data(rq_data)
+    if len(errors) > 0:
+        return {'errors': errors}, 400
+    
+    errors = validate_finalize_order_billing_data(rq_data)
+    if len(errors) > 0:
+        return {'errors': errors}, 400
+    
+    errors = validate_finalize_order_data(rq_data)
+    if len(errors) > 0:
+        return {'errors': errors}, 400
+
+    return '', 200
+
+
 def create_draft_order(shipping_methods):
     try:
         if flask.session.get('logged'):

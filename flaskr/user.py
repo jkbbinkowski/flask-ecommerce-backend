@@ -196,24 +196,21 @@ def change_password():
 @bp.route(config['ENDPOINTS']['orders'], methods=['GET'])
 @login_required
 def user_orders_list():
-    #get crucial cookies and parameters
-    user_config = flaskr.functions.get_config_cookie(flask.request)
+    #get crucial parameters
     page = flask.request.args.get('s', 1, type=int)
 
     #pagination
     flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM orders WHERE userId = %s OR email = %s', (flask.session['user_id'], flask.session['email']))
     total_orders = flask.g.cursor.fetchone()['total']
-    total_pages = (total_orders + 100 - 1)//100
+    total_pages = (total_orders + int(config["ORDERS"]["order_list_visibility_per_page"]) - 1)//int(config["ORDERS"]["order_list_visibility_per_page"])
     if page < 1 or ((page > total_pages) and (total_pages != 0)):
         flask.abort(404)
-    offset = (page - 1)*100
+    offset = (page - 1)*int(config["ORDERS"]["order_list_visibility_per_page"])
 
-    flask.g.cursor.execute(f'SELECT * FROM orders WHERE userId = %s OR email = %s LIMIT 100 OFFSET {offset}', (flask.session['user_id'], flask.session['email']))
+    flask.g.cursor.execute(f'SELECT * FROM orders WHERE userId = %s OR email = %s ORDER BY timestamp DESC LIMIT {int(config["ORDERS"]["order_list_visibility_per_page"])} OFFSET {offset}', (flask.session['user_id'], flask.session['email']))
     orders = flask.g.cursor.fetchall()
 
-    resp = flask.make_response(flask.render_template('user/orders/orders_list.html', orders=orders))
-    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], path='/')
-    return resp
+    return flask.render_template('user/orders/orders_list.html', orders=orders, current_page=page, total_pages=total_pages)
 
 
 def validate_billing_data(data):

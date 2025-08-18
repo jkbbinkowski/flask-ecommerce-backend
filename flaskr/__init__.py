@@ -54,6 +54,7 @@ compress = flask_compress.Compress(app)
 # jinja custom filters
 app.jinja_env.filters['slugify'] = flaskr.jinja_filters.slugify
 app.jinja_env.filters['jsonify'] = flaskr.jinja_filters.jsonify
+app.jinja_env.filters['timestamp_to_date'] = flaskr.jinja_filters.timestamp_to_date
 
 
 # app config

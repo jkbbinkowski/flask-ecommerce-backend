@@ -213,6 +213,26 @@ def user_orders_list():
     return flask.render_template('user/orders/orders_list.html', orders=orders, current_page=page, total_pages=total_pages, current_path=flask.request.path)
 
 
+@bp.route(config['ENDPOINTS']['invoices'], methods=['GET'])
+@login_required
+def user_invoices_list():
+    #get crucial parameters
+    page = flask.request.args.get('s', 1, type=int)
+
+    #pagination
+    flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM orderInvoices INNER JOIN orders ON orderInvoices.orderId = orders.id WHERE (orders.userId = %s OR orders.email = %s) AND (orderInvoices.invoiceNumber IS NOT NULL)', (flask.session['user_id'], flask.session['email']))
+    total_invoices = flask.g.cursor.fetchone()['total']
+    total_pages = (total_invoices + int(config["ORDERS"]["order_list_visibility_per_page"]) - 1)//int(config["ORDERS"]["order_list_visibility_per_page"])
+    if page < 1 or ((page > total_pages) and (total_pages != 0)):
+        flask.abort(404)
+    offset = (page - 1)*int(config["ORDERS"]["order_list_visibility_per_page"])
+
+    flask.g.cursor.execute(f'SELECT * FROM orderInvoices INNER JOIN orders ON orderInvoices.orderId = orders.id WHERE (orders.userId = %s OR orders.email = %s) AND (orderInvoices.invoiceNumber IS NOT NULL) ORDER BY orders.timestamp DESC LIMIT {int(config["ORDERS"]["order_list_visibility_per_page"])} OFFSET {offset}', (flask.session['user_id'], flask.session['email']))
+    invoices = flask.g.cursor.fetchall()
+
+    return flask.render_template('user/orders/invoices_list.html', invoices=invoices, current_page=page, total_pages=total_pages, current_path=flask.request.path)
+
+
 def validate_billing_data(data):
     errors = []
     if (len(data['bill-nm']) > 255):

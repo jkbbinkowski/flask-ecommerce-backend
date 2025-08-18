@@ -195,8 +195,25 @@ def change_password():
 
 @bp.route(config['ENDPOINTS']['orders'], methods=['GET'])
 @login_required
-def orderlist():
-    return flask.render_template('user/orders/orders_list.html')
+def user_orders_list():
+    #get crucial cookies and parameters
+    user_config = flaskr.functions.get_config_cookie(flask.request)
+    page = flask.request.args.get('s', 1, type=int)
+
+    #pagination
+    flask.g.cursor.execute(f'SELECT COUNT(*) as total FROM orders WHERE userId = %s OR email = %s', (flask.session['user_id'], flask.session['email']))
+    total_orders = flask.g.cursor.fetchone()['total']
+    total_pages = (total_orders + 100 - 1)//100
+    if page < 1 or ((page > total_pages) and (total_pages != 0)):
+        flask.abort(404)
+    offset = (page - 1)*100
+
+    flask.g.cursor.execute(f'SELECT * FROM orders WHERE userId = %s OR email = %s LIMIT 100 OFFSET {offset}', (flask.session['user_id'], flask.session['email']))
+    orders = flask.g.cursor.fetchall()
+
+    resp = flask.make_response(flask.render_template('user/orders/orders_list.html', orders=orders))
+    resp.set_cookie(config['COOKIE_NAMES']['user_preferences'], user_config['config_cookie'], path='/')
+    return resp
 
 
 def validate_billing_data(data):

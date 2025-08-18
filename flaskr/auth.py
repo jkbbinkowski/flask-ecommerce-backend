@@ -48,6 +48,7 @@ def login():
         flask.session['logged'] = True
         flask.session['user_id'] = auth_data_db[0]['id']
         flask.session['name'] = f"{auth_data_db[0]['firstName']} {auth_data_db[0]['lastName']}"
+        flask.session['email'] = auth_data_db[0]['email']
         flaskr.functions.migrate_cart('cookie->user')
 
         return flaskr.static_cache.SUCCESS_MESSAGES['auth']['logged-in'], 200

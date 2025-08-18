@@ -262,11 +262,9 @@ def order_details(order_uuid):
     flask.g.cursor.execute('SELECT * FROM payments WHERE orderId = %s', (order['id'],))
     payments = flask.g.cursor.fetchall()
     order['paymentStatus'] = config['PAYMENTS']['pending_payment_status']
-    order['paymentRequired'] = 1
     for payment in payments:
         if payment['success']:
             order['paymentStatus'] = config['PAYMENTS']['paid_payment_status']
-            order['paymentRequired'] = 0
             break
 
     return flask.render_template('order/details.html', order=order, order_invoice=order_invoice, tracking_numbers=tracking_numbers)

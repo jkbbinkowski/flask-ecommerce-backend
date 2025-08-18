@@ -191,6 +191,12 @@ def change_password():
         flask.g.redis_client.lpush(config['REDIS_QUEUES']['email_queue'], json.dumps(queue_data))
 
         return flaskr.static_cache.SUCCESS_MESSAGES['user']['password-changed'], 200
+    
+
+@bp.route(config['ENDPOINTS']['orders'], methods=['GET'])
+@login_required
+def orderlist():
+    return flask.render_template('user/orders/orders_list.html')
 
 
 def validate_billing_data(data):

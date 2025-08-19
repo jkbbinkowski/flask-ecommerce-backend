@@ -33,6 +33,8 @@ csrf = flask_wtf.csrf.CSRFProtect(app)
 
 # ASSETS CONFIG
 assets = flask_assets.Environment(app)
+assets.auto_build = bool(config['APP']['assets_auto_build'])
+assets.debug = bool(config['APP']['assets_debug'])
 css = flask_assets.Bundle('css/bootstrap.min.css', 'css/main.css', 'css/LineIcons.3.0.css', 'css/tiny-slider.css', 'css/glightbox.min.css', output='min/packed.css', filters='cssmin')
 assets.register('css_all', css)
 js_all = flask_assets.Bundle('js/bootstrap.min.js', 'js/tiny-slider.js', 'js/glightbox.min.js', 'js/main.js', output='min/packed.js', filters='jsmin')

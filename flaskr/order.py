@@ -288,7 +288,6 @@ def validate_order_data():
 
     return '', 200
 
-
 def create_draft_order(shipping_methods):
     try:
         if flask.session.get('logged'):

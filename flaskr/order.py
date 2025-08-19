@@ -204,17 +204,14 @@ def calculate_shipping_cost():
     return_json = {
         'shipping_methods': {
             str(uuid.uuid4()): {
-                'id': 1,
                 'cost': 4.92,
                 'name': 'Shipping 1'
             },
             str(uuid.uuid4()): {
-                'id': 2,
                 'cost': 19,
                 'name': 'Shipping 2'
             },
             str(uuid.uuid4()): {
-                'id': 3,
                 'cost': 24.99,
                 'name': 'Shipping 3'
             }

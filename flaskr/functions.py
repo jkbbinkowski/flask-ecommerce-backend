@@ -132,6 +132,11 @@ def get_config_cookie(request):
 
 
 def init_cart(response):
+    #check if redis_client is available
+    redis_client = getattr(flask.g, "redis_client", None)
+    if redis_client is None:
+        return response
+
     #prevent duplicates of uuid carts for concurrent requests withing the same session
     raw_id = f"{flask.request.remote_addr}:{flask.request.headers.get('User-Agent')}"
     hashed_id = hashlib.sha256(raw_id.encode()).hexdigest()

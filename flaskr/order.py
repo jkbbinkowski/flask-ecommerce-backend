@@ -309,6 +309,7 @@ def create_draft_order(shipping_methods):
             flask.g.cursor.execute('SELECT * from products WHERE id = %s', (product['productId'],))
             product_data = flask.g.cursor.fetchone()
             product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate'], 'name': product_data['name'], 'productId': product_data['id']})
+            del product['id']
 
         draft_order_uuid = str(uuid.uuid4())
         flask.g.cursor.execute('INSERT INTO draftOrders (cartId, uuid, products, shippingMethods, timestamp) VALUES (%s, %s, %s, %s, %s)', (cart_id, draft_order_uuid, json.dumps(cart_products), json.dumps(shipping_methods), int(time.time())))

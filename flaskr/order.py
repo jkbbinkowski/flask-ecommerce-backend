@@ -410,5 +410,4 @@ def validate_finalize_order_data(data):
     if len(data['order-ai']) > 1000:
         errors.append(flaskr.static_cache.ERROR_MESSAGES['order']['too_long_additional_info'])
     
-
     return errors

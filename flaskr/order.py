@@ -143,6 +143,10 @@ def finalize_order():
     flask.g.cursor.execute('DELETE FROM draftOrders WHERE uuid = %s', (rq_data['douuid'],))
     flask.g.conn.commit()
 
+    #add order status history
+    flask.g.cursor.execute('INSERT INTO orderStatusesHistory (orderId, status, timestamp) VALUES (%s, %s, %s)', (order_db_id, config['ORDERS']['new_order_status'], timestamp))
+    flask.g.conn.commit()
+
     #add invoice data
     if ('checkbox-bill' in rq_data) and (rq_data['checkbox-bill'] == True):
         flask.g.cursor.execute('''
@@ -228,43 +232,56 @@ def calculate_shipping_cost():
 
 @bp.route(f'{config['ENDPOINTS']['details']}/<order_uuid>', methods=['GET'])
 def order_details(order_uuid):
+    #get order data
     flask.g.cursor.execute('SELECT * FROM orders WHERE uuid = %s', (order_uuid,))
     order = flask.g.cursor.fetchone()
     if not order:
         return flask.abort(404)
     
+    #get order invoice data
     flask.g.cursor.execute('SELECT * FROM orderInvoices WHERE orderId = %s', (order['id'],))
     order_invoice = flask.g.cursor.fetchone()
 
+    #get order payment method data
     flask.g.cursor.execute('SELECT * FROM paymentMethods WHERE uuid = %s', (order['paymentMethod'],))
     order['orderPaymentMethod'] = flask.g.cursor.fetchone()['name']
 
+    #get order products data
     order['products'] = json.loads(order['products'])
     for product in order['products']:
         flask.g.cursor.execute('SELECT * FROM products WHERE id = %s', (product['productId'],))
         product_data = flask.g.cursor.fetchone()
         product.update({'priceNet': product_data['priceNet'], 'vatRate': product_data['vatRate'], 'name': product_data['name'], 'productId': product_data['id'], 'productEan': product_data['ean']})
 
+    #get order date
     order['orderDate'] = datetime.datetime.fromtimestamp(order['timestamp']).strftime('%d.%m.%Y %H:%M')
 
+    #get order tracking numbers data
     flask.g.cursor.execute('SELECT * FROM trackingNumbers WHERE orderId = %s', (order['id'],))
     tracking_numbers = flask.g.cursor.fetchall()
 
+    #get order tracking numbers carrier data
     for tracking_number in tracking_numbers:
         flask.g.cursor.execute('SELECT * FROM carriers WHERE id = %s', (tracking_number['carrierId'],))
         carrier = flask.g.cursor.fetchone()
         tracking_number['carrierName'] = carrier['name']
         tracking_number['trackingLink'] = carrier['trackingLink'].replace('XXXXXX', tracking_number['trackingNumber'])
 
+    #get order payments data
     flask.g.cursor.execute('SELECT * FROM payments WHERE orderId = %s', (order['id'],))
     payments = flask.g.cursor.fetchall()
     order['paymentStatus'] = config['PAYMENTS']['pending_payment_status']
+    #get order payment status
     for payment in payments:
         if payment['success']:
             order['paymentStatus'] = config['PAYMENTS']['paid_payment_status']
             break
 
-    return flask.render_template('order/details.html', order=order, order_invoice=order_invoice, tracking_numbers=tracking_numbers)
+    #get order status history
+    flask.g.cursor.execute('SELECT * FROM orderStatusesHistory WHERE orderId = %s ORDER BY timestamp DESC', (order['id'],))
+    order_status_history = flask.g.cursor.fetchall()
+
+    return flask.render_template('order/details.html', order=order, order_invoice=order_invoice, tracking_numbers=tracking_numbers, order_status_history=order_status_history)
 
 
 @bp.route(f'{config['ENDPOINTS']['validate_order_data']}', methods=['POST'])

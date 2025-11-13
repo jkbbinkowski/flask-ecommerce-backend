@@ -285,6 +285,15 @@ def validate_order_data():
 
     return '', 200
 
+
+@bp.route(f'{config['ACTIONS']['download_invoice']}/<invoice_uuid>', methods=['GET'])
+def download_invoice(invoice_uuid):
+    
+    ### logic here to download invoice
+
+    return invoice_uuid, 200
+    
+
 def create_draft_order(shipping_methods):
     try:
         if flask.session.get('logged'):

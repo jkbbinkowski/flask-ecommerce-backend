@@ -20,11 +20,3 @@ bp = flask.Blueprint('index', __name__, url_prefix='/')
 @bp.route('', methods=['GET'])
 def main():
     return flask.render_template('index.html')
-
-
-@bp.route(f'{config['ACTIONS']['download_invoice']}/<invoice_uuid>', methods=['GET'])
-def download_invoice(invoice_uuid):
-    
-    ### logic here to download invoice
-
-    return invoice_uuid, 200

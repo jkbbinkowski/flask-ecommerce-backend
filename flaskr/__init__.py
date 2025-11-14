@@ -16,6 +16,7 @@ import redis
 import flaskr.functions
 import flaskr.jinja_filters
 import flaskr.static_cache
+import logging
 
 
 dotenv.load_dotenv()
@@ -25,6 +26,17 @@ config.read(f'{working_dir}/config.ini')
 
 
 app = flask.Flask(__name__, instance_relative_config=True)
+
+
+#logging setup
+logger = logging.getLogger(__name__)
+os.makedirs(f'{working_dir}/logs', exist_ok=True)
+logger.setLevel(config["APP"]["logging_level"])
+handler = logging.FileHandler(f'{working_dir}/logs/{config["APP"]["logging_file"]}')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.info('Application started')
 
 
 # configure csrf

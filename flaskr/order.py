@@ -16,11 +16,14 @@ import random
 import string
 import werkzeug
 import datetime
+import logging
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
 config = configparser.ConfigParser()
 config.read(f'{working_dir}/config.ini')
+
+logger = logging.getLogger(__name__)
 
 
 bp = flask.Blueprint('order', __name__, url_prefix=config['ENDPOINTS']['order'])

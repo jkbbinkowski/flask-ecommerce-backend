@@ -7,12 +7,15 @@ import flask
 from functools import wraps
 import dotenv
 import configparser
+import logging
 
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
 config = configparser.ConfigParser()
 config.read(f'{working_dir}/config.ini')
+
+logger = logging.getLogger(__name__)
 
 
 def login_required(f):

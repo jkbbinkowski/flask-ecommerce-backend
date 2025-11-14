@@ -54,6 +54,7 @@ def login():
         flask.session['email'] = auth_data_db[0]['email']
         flaskr.functions.migrate_cart('cookie->user')
 
+        logger.info(f"User {auth_data_db[0]['email']} logged in")
         return flaskr.static_cache.SUCCESS_MESSAGES['auth']['logged-in'], 200
 
 

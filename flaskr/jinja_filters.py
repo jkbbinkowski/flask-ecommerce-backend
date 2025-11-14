@@ -7,13 +7,16 @@ import re
 import json
 import datetime
 
+
 def slugify(value):
     value = str(unicodedata.normalize('NFKD', value).encode('ascii', 'ignore'), 'ascii')
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
     return re.sub(r'[\s_-]+', '-', value)
 
+
 def jsonify(value):
     return json.loads(value)
+
 
 def timestamp_to_date(value):
     return datetime.datetime.fromtimestamp(value).strftime('%d.%m.%Y %H:%M')

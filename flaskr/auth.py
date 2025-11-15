@@ -52,6 +52,7 @@ def login():
         flask.session['user_id'] = auth_data_db[0]['id']
         flask.session['name'] = f"{auth_data_db[0]['firstName']} {auth_data_db[0]['lastName']}"
         flask.session['email'] = auth_data_db[0]['email']
+        flask.session['dropshipping'] = auth_data_db[0]['dropshipping']
         flaskr.functions.migrate_cart('cookie->user')
 
         logger.info(f"User {auth_data_db[0]['email']} logged in")

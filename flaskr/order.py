@@ -421,9 +421,9 @@ def build_shipping_combinations(aggr_dict):
         for suuid, data in aggr_dict[aggr_id].items():
             if len(aggr_ids) > 1:
                 if data['agregatorMixAllowed']:
-                    methods.append((suuid, data))
+                    methods.append((f'{aggr_id}_{suuid}', data))
             else:
-                methods.append((suuid, data))
+                methods.append((f'{aggr_id}_{suuid}', data))
         if not methods:
             return {'shipping_methods': {}}
         per_aggr.append(methods)
@@ -443,7 +443,7 @@ def build_shipping_combinations(aggr_dict):
             'suuids': suuids
         }
 
-    return {'shipping_methods': shipping_methods, 'smamt': len(aggr_ids)}
+    return {'shipping_methods': shipping_methods, 'aamt': len(aggr_ids)}
 
 
 def validate_finalize_order_shipping_data(data):

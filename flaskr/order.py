@@ -207,11 +207,12 @@ def finalize_order():
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
 def calculate_shipping_cost():
     return_json = {'shipping_methods': {}}
-    shipping_methods_dict = {}
+    agregated_shipping_methods = {}
     cart_total_price_gross = 0
 
     cart_products = flask.g.cart_products
     
+    #get all shipping methods from different agregators and assign them correctly
     for product in cart_products:
         cart_total_price_gross += round(product['price'] * (1 + product['vatRate'] / 100) * product['amount'], 2)
         flask.g.cursor.execute('''
@@ -221,23 +222,29 @@ def calculate_shipping_cost():
             INNER JOIN products p ON p.shippingAgregatorInternalName = sa.InternalName
             WHERE p.id = %s;
         ''', (product['amount'], product['id']))
-        shipping_methods = flask.g.cursor.fetchall()
-        for shipping_method in shipping_methods:
+        product_shipping_methods = flask.g.cursor.fetchall()
+
+        for shipping_method in product_shipping_methods:
             shipping_agregator_id = shipping_method['shippingAgregatorId']
             shipping_method_uuid = shipping_method['uuid']
-            if not shipping_agregator_id in shipping_methods_dict:
-                shipping_methods_dict[shipping_agregator_id] = {}
-            if not shipping_method_uuid in shipping_methods_dict[shipping_agregator_id]:
-                shipping_methods_dict[shipping_agregator_id].update({shipping_method_uuid: shipping_method})
+            if not shipping_agregator_id in agregated_shipping_methods:
+                agregated_shipping_methods[shipping_agregator_id] = {}
+            if not shipping_method_uuid in agregated_shipping_methods[shipping_agregator_id]:
+                agregated_shipping_methods[shipping_agregator_id].update({shipping_method_uuid: shipping_method})
             else:
-                shipping_methods_dict[shipping_agregator_id][shipping_method_uuid]['amountPerPackage'] += shipping_method['amountPerPackage']
+                agregated_shipping_methods[shipping_agregator_id][shipping_method_uuid]['amountPerPackage'] += shipping_method['amountPerPackage']
             dict_remover = ['uuid', 'shippingAgregatorId', 'id']
             for el in dict_remover:
-                if el in shipping_methods_dict[shipping_agregator_id][shipping_method_uuid]:
-                    del shipping_methods_dict[shipping_agregator_id][shipping_method_uuid][el]
+                if el in agregated_shipping_methods[shipping_agregator_id][shipping_method_uuid]:
+                    del agregated_shipping_methods[shipping_agregator_id][shipping_method_uuid][el]
 
-    print(cart_total_price_gross)
-    print(shipping_methods_dict)
+    #calculate shipping prices for each method based on amount of products and free standard shipping threshold
+    for shipping_agregator_id, shipping_methods in agregated_shipping_methods.items():
+        for shipping_method_uuid, shipping_method in shipping_methods.items():
+            if (shipping_method['standard']) and (cart_total_price_gross >= float(config['ORDERS']['free_standard_shipping_threshold'])):
+                shipping_method['costGross'] = 0
+            else:
+                shipping_method['costGross'] = shipping_method['costGross'] * math.ceil(shipping_method['amountPerPackage']/shipping_method['maxPerPackage'])
 
     return_json = {
         'shipping_methods': {}

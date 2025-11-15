@@ -17,6 +17,7 @@ import string
 import werkzeug
 import datetime
 import logging
+import math
 
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
@@ -204,23 +205,34 @@ def finalize_order():
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
 def calculate_shipping_cost():
-    shipping_methods = []
+    shipping_methods = {}
     return_json = {'shipping_methods': {}}
     
     products = flask.g.cart_products
     for product in products:
         flask.g.cursor.execute('''
-                                SELECT shippingMethods.*, products.maxPerPackage FROM shippingMethods
-                                INNER JOIN shippingAgregator ON shippingAgregator.id = shippingMethods.shippingAgregatorId
-                                RIGHT JOIN products ON products.shippingAgregatorInternalName = shippingAgregator.internalName
-                                WHERE products.id = %s; ''', (product['id'],))
+                                SELECT sm.*, sa.maxPerPackage, sa.id AS shippingAgregatorId FROM products p
+                                INNER JOIN shippingAgregator sa ON p.shippingAgregatorInternalName = sa.internalName
+                                RIGHT JOIN shippingAgregator_shippingMethods sa_sm ON sa.id = sa_sm.shippingAgregatorId
+                                INNER JOIN shippingMethods sm ON sa_sm.shippingMethodId = sm.id
+                                WHERE p.id = %s; ''', (product['id'],))
         product_shipping_methods = flask.g.cursor.fetchall()
-        for product_shipping_method in product_shipping_methods:
-            product_shipping_method['priceNet'] = product_shipping_method['priceNet'] * (product['amount']//product_shipping_method['maxPerPackage'])
-        shipping_methods.append(product_shipping_methods)
-    
+        for shipping_method in product_shipping_methods:
+            if not shipping_method['shippingAgregatorId'] in shipping_methods:
+                shipping_methods.update({shipping_method['shippingAgregatorId']: {}})
+            if not shipping_method['uuid'] in shipping_methods[shipping_method['shippingAgregatorId']]:
+                shipping_methods[shipping_method['shippingAgregatorId']].update({shipping_method['uuid']: {
+                    'cost': shipping_method['priceGross'] * int(math.ceil(product['amount']/shipping_method['maxPerPackage'])),
+                    'name': shipping_method['name'],
+                    'maxPerPackage': shipping_method['maxPerPackage'],
+                    'product_amount': product['amount']
+                }})
+            else:
+                shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['product_amount'] += product['amount']
+                shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['cost'] += shipping_method['priceGross'] * int(math.ceil(product['amount']/shipping_method['maxPerPackage']))
+                
+
     print(shipping_methods)
-    
 
     return_json = {
         'shipping_methods': {

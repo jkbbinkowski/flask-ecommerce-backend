@@ -19,6 +19,7 @@ import datetime
 import logging
 import math
 
+
 dotenv.load_dotenv()
 working_dir = os.getenv('WORKING_DIR')
 config = configparser.ConfigParser()
@@ -205,16 +206,16 @@ def finalize_order():
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
 def calculate_shipping_cost():
-    product_shipping_methods = []
     return_json = {'shipping_methods': {}}
+    shipping_methods_dict = {}
+    cart_total_price_gross = 0
 
     cart_products = flask.g.cart_products
-    cart_total_price_gross = 0
-    for cart_product in cart_products:
-        cart_total_price_gross += round(cart_product['price'] * (1 + cart_product['vatRate'] / 100) * cart_product['amount'], 2)
+    
     for product in cart_products:
+        cart_total_price_gross += round(product['price'] * (1 + product['vatRate'] / 100) * product['amount'], 2)
         flask.g.cursor.execute('''
-        SELECT DISTINCT sm.*, sa.maxPerPackage, %s AS product_amount, sa.id AS shippingAgregatorId FROM shippingMethods sm
+        SELECT DISTINCT sm.*, sa.maxPerPackage, %s AS amountPerPackage, sa.id AS shippingAgregatorId FROM shippingMethods sm
             INNER JOIN shippingAgregator_shippingMethods sa_sm ON sa_sm.shippingMethodId = sm.id
             INNER JOIN shippingAgregator sa ON sa.id = sa_sm.shippingAgregatorId
             INNER JOIN products p ON p.shippingAgregatorInternalName = sa.InternalName
@@ -222,14 +223,21 @@ def calculate_shipping_cost():
         ''', (product['amount'], product['id']))
         shipping_methods = flask.g.cursor.fetchall()
         for shipping_method in shipping_methods:
-            shipping_method['uuid'] = f'{shipping_method['shippingAgregatorId']}_{shipping_method['uuid']}'
-            del shipping_method['shippingAgregatorId']
-            shipping_method['costGross'] = round(shipping_method['costGross'] * math.ceil(product['amount'] / shipping_method['maxPerPackage']), 2)
-            if shipping_method['standard'] and (cart_total_price_gross >= float(config['ORDERS']['free_standard_shipping_threshold'])):
-                shipping_method['costGross'] = 0
+            shipping_agregator_id = shipping_method['shippingAgregatorId']
+            shipping_method_uuid = shipping_method['uuid']
+            if not shipping_agregator_id in shipping_methods_dict:
+                shipping_methods_dict[shipping_agregator_id] = {}
+            if not shipping_method_uuid in shipping_methods_dict[shipping_agregator_id]:
+                shipping_methods_dict[shipping_agregator_id].update({shipping_method_uuid: shipping_method})
+            else:
+                shipping_methods_dict[shipping_agregator_id][shipping_method_uuid]['amountPerPackage'] += shipping_method['amountPerPackage']
+            dict_remover = ['uuid', 'shippingAgregatorId', 'id']
+            for el in dict_remover:
+                if el in shipping_methods_dict[shipping_agregator_id][shipping_method_uuid]:
+                    del shipping_methods_dict[shipping_agregator_id][shipping_method_uuid][el]
 
-            print(shipping_method)
-
+    print(cart_total_price_gross)
+    print(shipping_methods_dict)
 
     return_json = {
         'shipping_methods': {}

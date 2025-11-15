@@ -227,15 +227,13 @@ def calculate_shipping_cost():
                 shipping_methods[shipping_method['shippingAgregatorId']].update({shipping_method['uuid']: {
                     'cost': shipping_method['priceGross'] * int(math.ceil(product['amount']/shipping_method['maxPerPackage'])),
                     'name': shipping_method['name'],
-                    'maxPerPackage': shipping_method['maxPerPackage'],
-                    'product_amount': product['amount'],
-                    'standard': shipping_method['standard']
+                    'product_amount': product['amount']
                 }})
             else:
                 shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['product_amount'] += product['amount']
                 shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['cost'] = shipping_method['priceGross'] * int(math.ceil(shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['product_amount']/shipping_method['maxPerPackage']))
-
-    print(shipping_methods)
+            if bool(int(config['ORDERS']['free_standard_shipping_threshold']) <= total_products_gross) and shipping_method['standard']:
+                shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['cost'] = 0
 
     for idx,sa_key in enumerate(shipping_methods):
         for shipping_method_uuid in shipping_methods[sa_key]:

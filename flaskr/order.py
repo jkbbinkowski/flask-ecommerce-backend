@@ -204,9 +204,23 @@ def finalize_order():
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
 def calculate_shipping_cost():
+    shipping_methods = []
+    return_json = {'shipping_methods': {}}
     
-    ### SOME LOGIC HERE TO CALCULATE SHIPPING COST LATER ON ###
-    ### BELOW IS EXAMPLE OF JSON RESPONSE AND OTHER NECESSARY STUFF ###
+    products = flask.g.cart_products
+    for product in products:
+        flask.g.cursor.execute('''
+                                SELECT shippingMethods.*, products.maxPerPackage FROM shippingMethods
+                                INNER JOIN shippingAgregator ON shippingAgregator.id = shippingMethods.shippingAgregatorId
+                                RIGHT JOIN products ON products.shippingAgregatorInternalName = shippingAgregator.internalName
+                                WHERE products.id = %s; ''', (product['id'],))
+        product_shipping_methods = flask.g.cursor.fetchall()
+        for product_shipping_method in product_shipping_methods:
+            product_shipping_method['priceNet'] = product_shipping_method['priceNet'] * (product['amount']//product_shipping_method['maxPerPackage'])
+        shipping_methods.append(product_shipping_methods)
+    
+    print(shipping_methods)
+    
 
     return_json = {
         'shipping_methods': {

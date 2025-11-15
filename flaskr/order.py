@@ -235,13 +235,23 @@ def calculate_shipping_cost():
             if bool(int(config['ORDERS']['free_standard_shipping_threshold']) <= total_products_gross) and shipping_method['standard']:
                 shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['cost'] = 0
 
-    for idx,sa_key in enumerate(shipping_methods):
+    for idx, sa_key in enumerate(shipping_methods):
         for shipping_method_uuid in shipping_methods[sa_key]:
             if idx == 0:
                 return_json['shipping_methods'].update({shipping_method_uuid: shipping_methods[sa_key][shipping_method_uuid]})
-            # else:
-            #     new_uuid = str(uuid.uuid4())
-            #     return_json['shipping_methods'][shipping_method_uuid] = return_json['shipping_methods'][new_uuid]
+            else:
+                new_dict = {'shipping_methods': {}}
+                for method in return_json['shipping_methods']:
+                    new_uuid = str(uuid.uuid4())
+                    new_name = f"{return_json['shipping_methods'][method]['name']} + {shipping_methods[sa_key][shipping_method_uuid]['name']}"
+                    new_cost = return_json['shipping_methods'][method]['cost'] + shipping_methods[sa_key][shipping_method_uuid]['cost']
+                    new_product_amount = return_json['shipping_methods'][method]['product_amount'] + shipping_methods[sa_key][shipping_method_uuid]['product_amount']
+                    new_dict['shipping_methods'].update({new_uuid: {
+                        'cost': new_cost,
+                        'name': new_name
+                    }})
+                return_json = new_dict
+                    
 
 
 

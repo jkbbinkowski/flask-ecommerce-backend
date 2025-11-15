@@ -205,19 +205,30 @@ def finalize_order():
 
 @bp.route(config['ENDPOINTS']['calculate_shipping'], methods=['POST'])
 def calculate_shipping_cost():
-    shipping_methods = []
+    product_shipping_methods = []
     return_json = {'shipping_methods': {}}
 
     cart_products = flask.g.cart_products
-
+    cart_total_price_gross = 0
+    for cart_product in cart_products:
+        cart_total_price_gross += round(cart_product['price'] * (1 + cart_product['vatRate'] / 100) * cart_product['amount'], 2)
     for product in cart_products:
         flask.g.cursor.execute('''
-        SELECT DISTINCT sm.*, sa.maxPerPackage, %s AS product_amount FROM shippingMethods sm
+        SELECT DISTINCT sm.*, sa.maxPerPackage, %s AS product_amount, sa.id AS shippingAgregatorId FROM shippingMethods sm
             INNER JOIN shippingAgregator_shippingMethods sa_sm ON sa_sm.shippingMethodId = sm.id
             INNER JOIN shippingAgregator sa ON sa.id = sa_sm.shippingAgregatorId
             INNER JOIN products p ON p.shippingAgregatorInternalName = sa.InternalName
             WHERE p.id = %s;
-        ''')
+        ''', (product['amount'], product['id']))
+        shipping_methods = flask.g.cursor.fetchall()
+        for shipping_method in shipping_methods:
+            shipping_method['uuid'] = f'{shipping_method['shippingAgregatorId']}_{shipping_method['uuid']}'
+            del shipping_method['shippingAgregatorId']
+            shipping_method['costGross'] = round(shipping_method['costGross'] * math.ceil(product['amount'] / shipping_method['maxPerPackage']), 2)
+            if shipping_method['standard'] and (cart_total_price_gross >= float(config['ORDERS']['free_standard_shipping_threshold'])):
+                shipping_method['costGross'] = 0
+
+            print(shipping_method)
 
 
     return_json = {

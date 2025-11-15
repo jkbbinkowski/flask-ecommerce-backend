@@ -247,9 +247,8 @@ def calculate_shipping_cost():
             else:
                 shipping_method['costGross'] = shipping_method['costGross'] * math.ceil(shipping_method['amountPerPackage']/shipping_method['maxPerPackage'])
 
+    #make all to possible combinations for products from different agregators
     return_json = build_shipping_combinations(agregated_shipping_methods)
-
-    print(return_json)
 
     draft_order_uuid = create_draft_order(return_json['shipping_methods'])
     if not draft_order_uuid:
@@ -420,13 +419,14 @@ def build_shipping_combinations(aggr_dict):
     shipping_methods = {}
     for combo in itertools.product(*per_aggr):
         names = [data['name'] for (suuid, data) in combo]
+        clean_names = list(dict.fromkeys(names))
         total_cost = sum(data['costGross'] for (suuid, data) in combo)
         suuids = [suuid for (suuid, data) in combo]
 
         key = str(uuid.uuid4())
 
         shipping_methods[key] = {
-            'name': ' + '.join(names),
+            'name': ' + '.join(clean_names),
             'costGross': total_cost,
             'suuids': suuids
         }

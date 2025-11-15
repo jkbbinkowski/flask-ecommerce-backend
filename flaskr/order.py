@@ -248,29 +248,14 @@ def calculate_shipping_cost():
                     new_product_amount = return_json['shipping_methods'][method]['product_amount'] + shipping_methods[sa_key][shipping_method_uuid]['product_amount']
                     new_dict['shipping_methods'].update({new_uuid: {
                         'cost': new_cost,
-                        'name': new_name
+                        'name': new_name,
+                        'product_amount': new_product_amount
                     }})
                 return_json = new_dict
                     
-
-
-
-    # return_json = {
-    #     'shipping_methods': {
-    #         str(uuid.uuid4()): {
-    #             'cost': 4.92,
-    #             'name': 'Shipping 1'
-    #         },
-    #         str(uuid.uuid4()): {
-    #             'cost': 19,
-    #             'name': 'Shipping 2'
-    #         },
-    #         str(uuid.uuid4()): {
-    #             'cost': 24.99,
-    #             'name': 'Shipping 3'
-    #         }
-    #     }
-    # }
+    # for shipping_method in return_json['shipping_methods']:
+    #     if 'product_amount' in return_json['shipping_methods'][shipping_method]:
+    #         del return_json['shipping_methods'][shipping_method]['product_amount']
 
     draft_order_uuid = create_draft_order(return_json['shipping_methods'])
     if not draft_order_uuid:

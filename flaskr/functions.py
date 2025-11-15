@@ -203,7 +203,8 @@ def get_cart_products():
             'price': product['priceNet'],
             'vatRate': product['vatRate'],
             'EAN': product['ean'],
-            'stock': product['stock']
+            'stock': product['stock'],
+            'group': product['group']
         })
     
     flask.g.cart_products = db_cart_products

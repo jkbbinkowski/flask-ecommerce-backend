@@ -55,7 +55,7 @@ def add_to_cart():
     else:
         if data['amount'] > product['stock']:
             return {"errors": flaskr.static_cache.ERROR_MESSAGES['cart']['not_enough_in_stock']}, 400
-        flask.g.cursor.execute('INSERT INTO cartProducts (productId, amount, cartId) VALUES (%s, %s, %s)', (data['productId'], data['amount'], cart_id))
+        flask.g.cursor.execute('INSERT INTO cartProducts (productId, amount, cartId, productGroup) VALUES (%s, %s, %s, %s)', (data['productId'], data['amount'], cart_id, product['group']))
         flask.g.conn.commit()
     
     flask.g.cursor.execute('UPDATE carts SET lastModTime = %s WHERE id = %s', (int(time.time()), cart_id))

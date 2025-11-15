@@ -248,7 +248,7 @@ def calculate_shipping_cost():
                 shipping_method['costGross'] = shipping_method['costGross'] * math.ceil(shipping_method['amountPerPackage']/shipping_method['maxPerPackage'])
 
     #make all to possible combinations for products from different agregators
-    return_json = build_shipping_combinations(agregated_shipping_methods)
+    return_json = build_shipping_combinations(agregated_shipping_methods, flask.session.get('dropshipping', None))
 
     draft_order_uuid = create_draft_order(return_json['shipping_methods'])
     if not draft_order_uuid:
@@ -404,7 +404,7 @@ def create_and_validate_order_number():
     return order_number
 
 
-def build_shipping_combinations(aggr_dict):
+def build_shipping_combinations(aggr_dict, dropshipping):
     aggr_ids = sorted(aggr_dict.keys())
 
     per_aggr = []
@@ -422,7 +422,6 @@ def build_shipping_combinations(aggr_dict):
 
     shipping_methods = {}
     for combo in itertools.product(*per_aggr):
-        print(combo)
         names = [data['name'] for (suuid, data) in combo]
         clean_names = list(dict.fromkeys(names))
         total_cost = sum(data['costGross'] for (suuid, data) in combo)
@@ -435,6 +434,8 @@ def build_shipping_combinations(aggr_dict):
             'costGross': total_cost,
             'suuids': suuids
         }
+
+        print(combo)
 
     return {'shipping_methods': shipping_methods, 'aamt': len(aggr_ids)}
 

@@ -250,14 +250,6 @@ def calculate_shipping_cost():
     #make all to possible combinations for products from different agregators
     return_json = build_shipping_combinations(agregated_shipping_methods)
 
-    #add own label for dropshipping clients
-    if flask.session.get('dropshipping', None):
-        return_json['shipping_methods'][str(uuid.uuid4())] = {
-            'name': config['DROPSHIPPING']['shippingMethodName'],
-            'costGross': float(config['DROPSHIPPING']['shippingMethodCostGross']),
-            'suuids': [config['DROPSHIPPING']['shippingMethodUuid']]
-        }
-
     draft_order_uuid = create_draft_order(return_json['shipping_methods'])
     if not draft_order_uuid:
         return flask.jsonify({'errors': flaskr.static_cache.ERROR_MESSAGES['order']['failed_to_calculate_shipping']}), 500
@@ -430,6 +422,7 @@ def build_shipping_combinations(aggr_dict):
 
     shipping_methods = {}
     for combo in itertools.product(*per_aggr):
+        print(combo)
         names = [data['name'] for (suuid, data) in combo]
         clean_names = list(dict.fromkeys(names))
         total_cost = sum(data['costGross'] for (suuid, data) in combo)

@@ -207,68 +207,22 @@ def finalize_order():
 def calculate_shipping_cost():
     shipping_methods = []
     return_json = {'shipping_methods': {}}
-    
-    products = flask.g.cart_products
-    total_products_gross = 0
-    for product in products:
-        total_products_gross += round(product['price'] * (1 + product['vatRate'] / 100) * product['amount'], 2)
-    for product in products:
+
+    cart_products = flask.g.cart_products
+
+    for product in cart_products:
         flask.g.cursor.execute('''
-                                SELECT sm.*, sa.maxPerPackage, sa.id AS shippingAgregatorId FROM products p
-                                INNER JOIN shippingAgregator sa ON p.shippingAgregatorInternalName = sa.internalName
-                                RIGHT JOIN shippingAgregator_shippingMethods sa_sm ON sa.id = sa_sm.shippingAgregatorId
-                                INNER JOIN shippingMethods sm ON sa_sm.shippingMethodId = sm.id
-                                WHERE p.id = %s; ''', (product['id'],))
-        product_shipping_methods = flask.g.cursor.fetchall()
-        for shipping_method in product_shipping_methods:
-            sa_found = None
-            for sa_item in shipping_methods:
-                if sa_item['shippingAgregatorId'] == shipping_method['shippingAgregatorId']:
-                    sa_found = sa_item
-                    break
-            
-            if sa_found is None:
-                shipping_methods.append({
-                    'shippingAgregatorId': shipping_method['shippingAgregatorId'],
-                    'methods': {}
-                })
-                sa_found = shipping_methods[-1]
-            
-            if not shipping_method['uuid'] in sa_found['methods']:
-                sa_found['methods'].update({shipping_method['uuid']: {
-                    'cost': shipping_method['priceGross'] * int(math.ceil(product['amount']/shipping_method['maxPerPackage'])),
-                    'name': shipping_method['name'],
-                    'product_amount': product['amount']
-                }})
-            else:
-                sa_found['methods'][shipping_method['uuid']]['product_amount'] += product['amount']
-                sa_found['methods'][shipping_method['uuid']]['cost'] = shipping_method['priceGross'] * int(math.ceil(sa_found['methods'][shipping_method['uuid']]['product_amount']/shipping_method['maxPerPackage']))
-            if bool(int(config['ORDERS']['free_standard_shipping_threshold']) <= total_products_gross) and shipping_method['standard']:
-                sa_found['methods'][shipping_method['uuid']]['cost'] = 0
+        SELECT DISTINCT sm.*, sa.maxPerPackage, %s AS product_amount FROM shippingMethods sm
+            INNER JOIN shippingAgregator_shippingMethods sa_sm ON sa_sm.shippingMethodId = sm.id
+            INNER JOIN shippingAgregator sa ON sa.id = sa_sm.shippingAgregatorId
+            INNER JOIN products p ON p.shippingAgregatorInternalName = sa.InternalName
+            WHERE p.id = %s;
+        ''')
 
-    shipping_methods.sort(key=lambda x: len(x['methods']), reverse=True)
 
-    for idx, sa_item in enumerate(shipping_methods):
-        for shipping_method_uuid in sa_item['methods']:
-            if idx == 0:
-                return_json['shipping_methods'].update({shipping_method_uuid: sa_item['methods'][shipping_method_uuid]})
-            else:
-                new_dict = {'shipping_methods': {}}
-                for method in return_json['shipping_methods']:
-                    new_uuid = str(uuid.uuid4())
-                    new_name = f"{return_json['shipping_methods'][method]['name']} + {sa_item['methods'][shipping_method_uuid]['name']}"
-                    new_cost = return_json['shipping_methods'][method]['cost'] + sa_item['methods'][shipping_method_uuid]['cost']
-                    new_product_amount = return_json['shipping_methods'][method]['product_amount'] + sa_item['methods'][shipping_method_uuid]['product_amount']
-                    new_dict['shipping_methods'].update({new_uuid: {
-                        'cost': new_cost,
-                        'name': new_name,
-                        'product_amount': new_product_amount
-                    }})
-                return_json = new_dict
-                    
-    for shipping_method in return_json['shipping_methods']:
-        if 'product_amount' in return_json['shipping_methods'][shipping_method]:
-            del return_json['shipping_methods'][shipping_method]['product_amount']
+    return_json = {
+        'shipping_methods': {}
+    }
 
     draft_order_uuid = create_draft_order(return_json['shipping_methods'])
     if not draft_order_uuid:

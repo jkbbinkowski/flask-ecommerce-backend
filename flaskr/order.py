@@ -242,7 +242,7 @@ def calculate_shipping_cost():
     #calculate shipping prices for each method based on amount of products and free standard shipping threshold
     for shipping_agregator_id, shipping_methods in agregated_shipping_methods.items():
         for shipping_method_uuid, shipping_method in shipping_methods.items():
-            if (shipping_method['standard']) and (cart_total_price_gross >= float(config['ORDERS']['free_standard_shipping_threshold'])):
+            if (shipping_method['standard']) and (cart_total_price_gross >= float(config['ORDERS']['free_standard_shipping_threshold'])) and (not flask.session.get('dropshipping', None)):
                 shipping_method['costGross'] = 0
             else:
                 shipping_method['costGross'] = shipping_method['costGross'] * math.ceil(shipping_method['amountPerPackage']/shipping_method['maxPerPackage'])

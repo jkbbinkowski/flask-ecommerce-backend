@@ -209,6 +209,9 @@ def calculate_shipping_cost():
     return_json = {'shipping_methods': {}}
     
     products = flask.g.cart_products
+    total_products_gross = 0
+    for product in products:
+        total_products_gross += round(product['price'] * (1 + product['vatRate'] / 100) * product['amount'], 2)
     for product in products:
         flask.g.cursor.execute('''
                                 SELECT sm.*, sa.maxPerPackage, sa.id AS shippingAgregatorId FROM products p
@@ -225,31 +228,41 @@ def calculate_shipping_cost():
                     'cost': shipping_method['priceGross'] * int(math.ceil(product['amount']/shipping_method['maxPerPackage'])),
                     'name': shipping_method['name'],
                     'maxPerPackage': shipping_method['maxPerPackage'],
-                    'product_amount': product['amount']
+                    'product_amount': product['amount'],
+                    'standard': shipping_method['standard']
                 }})
             else:
                 shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['product_amount'] += product['amount']
-                shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['cost'] += shipping_method['priceGross'] * int(math.ceil(product['amount']/shipping_method['maxPerPackage']))
-                
+                shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['cost'] = shipping_method['priceGross'] * int(math.ceil(shipping_methods[shipping_method['shippingAgregatorId']][shipping_method['uuid']]['product_amount']/shipping_method['maxPerPackage']))
 
     print(shipping_methods)
 
-    return_json = {
-        'shipping_methods': {
-            str(uuid.uuid4()): {
-                'cost': 4.92,
-                'name': 'Shipping 1'
-            },
-            str(uuid.uuid4()): {
-                'cost': 19,
-                'name': 'Shipping 2'
-            },
-            str(uuid.uuid4()): {
-                'cost': 24.99,
-                'name': 'Shipping 3'
-            }
-        }
-    }
+    for idx,sa_key in enumerate(shipping_methods):
+        for shipping_method_uuid in shipping_methods[sa_key]:
+            if idx == 0:
+                return_json['shipping_methods'].update({shipping_method_uuid: shipping_methods[sa_key][shipping_method_uuid]})
+            # else:
+            #     new_uuid = str(uuid.uuid4())
+            #     return_json['shipping_methods'][shipping_method_uuid] = return_json['shipping_methods'][new_uuid]
+
+
+
+    # return_json = {
+    #     'shipping_methods': {
+    #         str(uuid.uuid4()): {
+    #             'cost': 4.92,
+    #             'name': 'Shipping 1'
+    #         },
+    #         str(uuid.uuid4()): {
+    #             'cost': 19,
+    #             'name': 'Shipping 2'
+    #         },
+    #         str(uuid.uuid4()): {
+    #             'cost': 24.99,
+    #             'name': 'Shipping 3'
+    #         }
+    #     }
+    # }
 
     draft_order_uuid = create_draft_order(return_json['shipping_methods'])
     if not draft_order_uuid:

@@ -125,7 +125,7 @@ def finalize_order():
 
     #calculate total to pay
     total_to_pay = 0
-    total_to_pay += json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost']
+    total_to_pay += json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['costGross']
     for product in json.loads(draft_order_data['products']):
         total_to_pay += ((product['priceNet']*(1+(product['vatRate']/100))) * product['amount'])
     total_to_pay = round(total_to_pay, 2)
@@ -179,7 +179,7 @@ def finalize_order():
         'order_status': config['ORDERS']['new_order_status'],
         'payment_method_name': payment_method_name,
         'shipping_method_name': json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['name'],
-        'shipping_method_cost': json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['cost'],
+        'shipping_method_cost': json.loads(draft_order_data['shippingMethods'])[rq_data['smuuid']]['costGross'],
         'order_date': datetime.datetime.fromtimestamp(timestamp).strftime('%d.%m.%Y %H:%M'),
         'products': json.loads(draft_order_data['products']),
         'total_to_pay': str(total_to_pay)
